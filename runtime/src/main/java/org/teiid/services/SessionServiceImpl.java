@@ -401,7 +401,7 @@ public class SessionServiceImpl implements SessionService {
         	public void run() {
         		monitorSessions();
         	}
-        }, 0, ServerConnection.PING_INTERVAL * 5);
+        }, ServerConnection.PING_INTERVAL * 3, ServerConnection.PING_INTERVAL * 2);
 	}
 
 	public void stop(){
