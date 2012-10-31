@@ -24,7 +24,11 @@ package org.teiid.query.function;
 
 import static org.junit.Assert.*;
 
+import java.sql.Timestamp;
 import org.junit.Test;
+import org.teiid.language.SQLConstants.NonReserved;
+import org.teiid.query.unittest.TimestampUtil;
+import org.teiid.query.function.FunctionMethods;
 
 @SuppressWarnings("nls")
 public class TestFunctionMethods {
@@ -35,6 +39,12 @@ public class TestFunctionMethods {
 	
 	@Test public void testUnescape1() {
 		assertEquals("a\u45AA'", FunctionMethods.unescape("a\\u45Aa\'"));
+	}
+	
+	@Test public void testTimestampDiffTimeStamp_ErrorUsingEndDate2304() throws Exception {
+		assertEquals(Long.valueOf(106752), FunctionMethods.timestampDiff(NonReserved.SQL_TSI_DAY, 
+				new Timestamp(TimestampUtil.createDate(112, 0, 1).getTime()),
+				new Timestamp(TimestampUtil.createDate(404, 3, 13).getTime())));
 	}
 
 }
