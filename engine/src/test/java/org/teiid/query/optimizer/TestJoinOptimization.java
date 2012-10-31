@@ -52,6 +52,7 @@ import org.teiid.query.sql.symbol.Expression;
 import org.teiid.query.sql.symbol.GroupSymbol;
 import org.teiid.query.unittest.RealMetadataFactory;
 import org.teiid.translator.SourceSystemFunctions;
+import org.teiid.translator.ExecutionFactory.NullOrder;
 
 @SuppressWarnings("nls")
 public class TestJoinOptimization {

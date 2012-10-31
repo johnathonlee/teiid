@@ -34,9 +34,11 @@ import java.util.Set;
 import org.teiid.api.exception.query.QueryMetadataException;
 import org.teiid.api.exception.query.QueryPlannerException;
 import org.teiid.core.TeiidComponentException;
+import org.teiid.language.SortSpecification.NullOrdering;
 import org.teiid.query.analysis.AnalysisRecord;
 import org.teiid.query.metadata.QueryMetadataInterface;
 import org.teiid.query.optimizer.capabilities.CapabilitiesFinder;
+import org.teiid.query.optimizer.capabilities.SourceCapabilities.Capability;
 import org.teiid.query.optimizer.relational.OptimizerRule;
 import org.teiid.query.optimizer.relational.RuleStack;
 import org.teiid.query.optimizer.relational.plantree.NodeConstants;
@@ -48,9 +50,12 @@ import org.teiid.query.processor.relational.RelationalNode;
 import org.teiid.query.processor.relational.JoinNode.JoinStrategyType;
 import org.teiid.query.processor.relational.MergeJoinStrategy.SortOption;
 import org.teiid.query.sql.lang.CompareCriteria;
+import org.teiid.query.sql.lang.CompoundCriteria;
 import org.teiid.query.sql.lang.Criteria;
+import org.teiid.query.sql.lang.IsNullCriteria;
 import org.teiid.query.sql.lang.JoinType;
 import org.teiid.query.sql.lang.OrderBy;
+import org.teiid.query.sql.lang.OrderByItem;
 import org.teiid.query.sql.symbol.ElementSymbol;
 import org.teiid.query.sql.symbol.Expression;
 import org.teiid.query.sql.symbol.GroupSymbol;
@@ -58,6 +63,7 @@ import org.teiid.query.sql.symbol.SingleElementSymbol;
 import org.teiid.query.sql.util.SymbolMap;
 import org.teiid.query.sql.visitor.GroupsUsedByElementsVisitor;
 import org.teiid.query.util.CommandContext;
+import org.teiid.translator.ExecutionFactory.NullOrder;
 
 
 /**
@@ -249,14 +255,14 @@ public class RuleImplementJoinStrategy implements OptimizerRule {
         	if (distinct || NewCalculateCostUtil.usesKey(sourceNode, expressions, metadata)) {
                 joinNode.setProperty(joinNode.getFirstChild() == childNode ? NodeConstants.Info.IS_LEFT_DISTINCT : NodeConstants.Info.IS_RIGHT_DISTINCT, true);
         	}
-	        if (attemptPush && RuleRaiseAccess.canRaiseOverSort(sourceNode, metadata, capFinder, sortNode, null, false)) {
-	            sourceNode.getFirstChild().addAsParent(sortNode);
-	            
-	            if (needsCorrection) {
-	                correctOutputElements(joinNode, outputSymbols, sortNode);
-	            }
-	            return true;
-	        }
+        	if (attemptPush && RuleRaiseAccess.canRaiseOverSort(sourceNode, metadata, capFinder, sortNode, null, false)) {
+        		sourceNode.getFirstChild().addAsParent(sortNode);
+        		
+        		if (needsCorrection) {
+        			correctOutputElements(joinNode, outputSymbols, sortNode);
+        		}
+        		return true;
+        	}
         } else if (sourceNode.getType() == NodeConstants.Types.GROUP) {
         	sourceNode.addAsParent(sortNode);
         	sort = false; // the grouping columns must contain all of the ordering columns
