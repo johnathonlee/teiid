@@ -489,7 +489,8 @@ public final class RuleCollapseSource implements OptimizerRule {
     }
     
     private void processOrderBy(PlanNode node, QueryCommand query, Object modelID, CommandContext context, CapabilitiesFinder capFinder) throws QueryMetadataException, TeiidComponentException {
-		OrderBy orderBy = (OrderBy)node.getProperty(NodeConstants.Info.SORT_ORDER);
+    	boolean userOrdering = NodeEditor.findParent(node, NodeConstants.Types.JOIN|NodeConstants.Types.SOURCE) == null;
+    	OrderBy orderBy = (OrderBy)node.getProperty(NodeConstants.Info.SORT_ORDER);
 		query.setOrderBy(orderBy);
 		if (query instanceof Query) {
 			List<SingleElementSymbol> cols = query.getProjectedSymbols();
@@ -506,7 +507,7 @@ public final class RuleCollapseSource implements OptimizerRule {
 					item.setNullOrdering(null);
 				}
 			// assuming true for backport,  context.getOptions().isPushdownDefaultNullOrder()
-			} else if (supportsNullOrdering && defaultNullOrder != NullOrder.LOW && true) {
+			} else if (userOrdering && supportsNullOrdering && defaultNullOrder != NullOrder.LOW && true) {
 				//try to match the expected default of low
 				if (item.isAscending()) {
 					if (defaultNullOrder != NullOrder.FIRST) {
