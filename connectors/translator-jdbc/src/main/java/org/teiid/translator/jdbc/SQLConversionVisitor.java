@@ -414,6 +414,9 @@ public class SQLConversionVisitor extends SQLStringVisitor{
 		if (obj.getMetadataObject() != null) {
 			String nativeQuery = obj.getMetadataObject().getProperty(TEIID_NATIVE_QUERY, false);
 	    	if (nativeQuery != null) {
+	    		if (obj.getCorrelationName() == null) {
+	    			throw new IllegalArgumentException("alias needed. When native query is being used, then alias name must be defined for table in the query.");
+	    		}
 	    		buffer.append(Tokens.LPAREN).append(nativeQuery).append(Tokens.RPAREN);
 	    		if (obj.getCorrelationName() == null) {
 	                buffer.append(Tokens.SPACE);
@@ -421,6 +424,7 @@ public class SQLConversionVisitor extends SQLStringVisitor{
 	                    buffer.append(AS).append(Tokens.SPACE);
 	                }
 	    		}
+	    		return;
 	    	}
 		}
 		super.appendBaseName(obj);
