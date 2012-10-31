@@ -143,6 +143,8 @@ public class CommandContext implements Cloneable, org.teiid.CommandContext {
 		private Executor executor = ExecutorUtils.getDirectExecutor();
 		private LRUCache<String, DecimalFormat> decimalFormatCache;
 		private LRUCache<String, SimpleDateFormat> dateFormatCache;
+		
+		private Options options;
 	}
 	
 	private GlobalState globalState = new GlobalState();
@@ -691,5 +693,17 @@ public class CommandContext implements Cloneable, org.teiid.CommandContext {
 		}
 		return result;
 	}
+	
+	public Options getOptions() {
+		if (this.globalState.options == null) {
+			this.globalState.options = new Options();
+		}
+		return this.globalState.options;
+	}
+	
+	public void setOptions(Options options) {
+		this.globalState.options = options;
+	}
+
 	
 }

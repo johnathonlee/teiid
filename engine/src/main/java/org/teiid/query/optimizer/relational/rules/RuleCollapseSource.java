@@ -506,8 +506,7 @@ public final class RuleCollapseSource implements OptimizerRule {
 				if (!supportsNullOrdering) {
 					item.setNullOrdering(null);
 				}
-			// assuming true for backport,  context.getOptions().isPushdownDefaultNullOrder()
-			} else if (userOrdering && supportsNullOrdering && defaultNullOrder != NullOrder.LOW && true) {
+			} else if (userOrdering && supportsNullOrdering && defaultNullOrder != NullOrder.LOW &&  context.getOptions().isPushdownDefaultNullOrder()) {
 				//try to match the expected default of low
 				if (item.isAscending()) {
 					if (defaultNullOrder != NullOrder.FIRST) {
