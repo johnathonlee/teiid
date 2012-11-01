@@ -145,6 +145,8 @@ public class CommandContext implements Cloneable, org.teiid.CommandContext {
 		private LRUCache<String, SimpleDateFormat> dateFormatCache;
 		
 		private Options options;
+
+		public ClassLoader classLoader;
 	}
 	
 	private GlobalState globalState = new GlobalState();
@@ -160,14 +162,13 @@ public class CommandContext implements Cloneable, org.teiid.CommandContext {
      * Construct a new context.
      */
     public CommandContext(Object processorID, String connectionID, String userName, 
-        Serializable commandPayload, String vdbName, int vdbVersion, Properties envProperties, boolean collectNodeStatistics) {
+        Serializable commandPayload, String vdbName, int vdbVersion, boolean collectNodeStatistics) {
         setProcessorID(processorID);
         setConnectionID(connectionID);
         setUserName(userName);
         setCommandPayload(commandPayload);
         setVdbName(vdbName);
         setVdbVersion(vdbVersion);  
-        setEnvironmentProperties(envProperties);        
         setCollectNodeStatistics(collectNodeStatistics);
     }
 
@@ -178,7 +179,7 @@ public class CommandContext implements Cloneable, org.teiid.CommandContext {
         String vdbName, int vdbVersion) {
 
         this(processorID, connectionID, userName, null, vdbName, 
-            vdbVersion, null, false);            
+            vdbVersion, false);            
              
     }
 
@@ -703,6 +704,14 @@ public class CommandContext implements Cloneable, org.teiid.CommandContext {
 	
 	public void setOptions(Options options) {
 		this.globalState.options = options;
+	}
+
+	public ClassLoader getVDBClassLoader() {
+		return this.globalState.classLoader;
+	}
+	
+	public void setVDBClassLoader(ClassLoader classLoader) {
+		this.globalState.classLoader = classLoader;
 	}
 
 	

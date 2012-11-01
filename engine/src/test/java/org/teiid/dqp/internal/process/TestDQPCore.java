@@ -230,7 +230,7 @@ public class TestDQPCore {
         String userName = "1"; //$NON-NLS-1$
         helpExecute(sql, userName);
     }
-
+/**
     @Test public void testEnvSessionId() throws Exception {
         String sql = "SELECT env('sessionid') as SessionID"; //$NON-NLS-1$
         String userName = "1"; //$NON-NLS-1$
@@ -244,7 +244,7 @@ public class TestDQPCore {
         ResultsMessage rm = helpExecute(sql, userName);
         assertEquals("1", rm.getResultsList().get(0).get(0)); //$NON-NLS-1$
     }
-    
+**/    
     @Test public void testTxnAutoWrap() throws Exception {
     	String sql = "SELECT * FROM BQT1.SmallA"; //$NON-NLS-1$
     	helpExecute(sql, "a", 1, true); //$NON-NLS-1$
