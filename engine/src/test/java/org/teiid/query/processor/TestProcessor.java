@@ -47,6 +47,7 @@ import org.teiid.core.TeiidRuntimeException;
 import org.teiid.core.types.DataTypeManager;
 import org.teiid.core.types.XMLType;
 import org.teiid.core.util.ExecutorUtils;
+import org.teiid.core.util.PropertiesUtils;
 import org.teiid.dqp.internal.process.CachedResults;
 import org.teiid.dqp.internal.process.PreparedPlan;
 import org.teiid.dqp.internal.process.QueryProcessorFactoryImpl;
@@ -92,6 +93,7 @@ import org.teiid.query.tempdata.TempTableStore.TransactionMode;
 import org.teiid.query.unittest.RealMetadataFactory;
 import org.teiid.query.unittest.TimestampUtil;
 import org.teiid.query.util.CommandContext;
+import org.teiid.query.util.Options;
 import org.teiid.query.validator.Validator;
 import org.teiid.query.validator.ValidatorReport;
 import org.teiid.translator.SourceSystemFunctions;
@@ -350,10 +352,14 @@ public class TestProcessor {
 	}
 
 	public static CommandContext createCommandContext() {
-		Properties props = new Properties();
-		props.setProperty("soap_host", "my.host.com"); //$NON-NLS-1$ //$NON-NLS-2$
-		props.setProperty("soap_port", "12345"); //$NON-NLS-1$ //$NON-NLS-2$
-		CommandContext context = new CommandContext("0", "test", "user", null, "myvdb", 1, props, DEBUG); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		
+		Options options = new Options();
+        options.setProperties(System.getProperties());
+        options.getProperties().setProperty("soap_host", "my.host.com"); //$NON-NLS-1$ //$NON-NLS-2$
+        options.getProperties().setProperty("soap_port", "12345"); //$NON-NLS-1$ //$NON-NLS-2$
+        PropertiesUtils.setBeanProperties(options, options.getProperties(), "org.teiid", true); //$NON-NLS-1$
+
+		CommandContext context = new CommandContext("0", "test", "user", null, "myvdb", 1, DEBUG); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
         context.setProcessorBatchSize(BufferManager.DEFAULT_PROCESSOR_BATCH_SIZE);
         context.setBufferManager(BufferManagerFactory.getStandaloneBufferManager());
         context.setPreparedPlanCache(new SessionAwareCache<PreparedPlan>());

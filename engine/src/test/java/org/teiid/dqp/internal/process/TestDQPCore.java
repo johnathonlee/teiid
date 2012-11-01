@@ -232,6 +232,7 @@ public class TestDQPCore {
     }
 
     @Test public void testEnvSessionId() throws Exception {
+    	System.out.println("testEnvSessionId--------------------");
         String sql = "SELECT env('sessionid') as SessionID"; //$NON-NLS-1$
         String userName = "1"; //$NON-NLS-1$
         ResultsMessage rm = helpExecute(sql, userName);
