@@ -78,7 +78,6 @@ import org.teiid.query.resolver.QueryResolver;
 import org.teiid.query.rewriter.QueryRewriter;
 import org.teiid.query.sql.lang.BatchedUpdateCommand;
 import org.teiid.query.sql.lang.Command;
-import org.teiid.query.util.ContextProperties;
 import org.teiid.query.sql.lang.Limit;
 import org.teiid.query.sql.lang.QueryCommand;
 import org.teiid.query.sql.lang.StoredProcedure;
@@ -90,6 +89,7 @@ import org.teiid.query.sql.visitor.ReferenceCollectorVisitor;
 import org.teiid.query.tempdata.GlobalTableStore;
 import org.teiid.query.tempdata.TempTableStore;
 import org.teiid.query.util.CommandContext;
+import org.teiid.query.util.ContextProperties;
 import org.teiid.query.util.Options;
 import org.teiid.query.validator.AbstractValidationVisitor;
 import org.teiid.query.validator.ValidationVisitor;
@@ -257,13 +257,15 @@ public class Request implements SecurityFunctionEvaluator {
         context.setSubject(workContext.getSubject());
         context.setEnvironmentProperties(props);
         
+        Options options = new Options();
+        options.setProperties(System.getProperties());
+        PropertiesUtils.setBeanProperties(options, options.getProperties(), "org.teiid", true); //$NON-NLS-1$
         this.context.setConnectionID(workContext.getSessionId());
         this.context.setSession(workContext.getSession());
         this.context.setRequestId(this.requestId);
         this.context.setDQPWorkContext(this.workContext);
         this.context.setTransactionService(this.transactionService);
         this.context.setTransactionContext(this.transactionContext);
-		this.context.setVDBClassLoader(workContext.getVDB().getAttachment(ClassLoader.class));
     }
     
     @Override

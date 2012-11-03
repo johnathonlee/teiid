@@ -145,8 +145,6 @@ public class CommandContext implements Cloneable, org.teiid.CommandContext {
 		private LRUCache<String, SimpleDateFormat> dateFormatCache;
 		
 		private Options options;
-
-		public ClassLoader classLoader;
 	}
 	
 	private GlobalState globalState = new GlobalState();
@@ -705,14 +703,4 @@ public class CommandContext implements Cloneable, org.teiid.CommandContext {
 	public void setOptions(Options options) {
 		this.globalState.options = options;
 	}
-
-	public ClassLoader getVDBClassLoader() {
-		return this.globalState.classLoader;
-	}
-	
-	public void setVDBClassLoader(ClassLoader classLoader) {
-		this.globalState.classLoader = classLoader;
-	}
-
-	
 }
