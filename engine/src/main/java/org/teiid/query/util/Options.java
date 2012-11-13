@@ -34,7 +34,7 @@ public class Options {
 
 	private Properties properties;
 	private boolean subqueryUnnestDefault;
-	private boolean pushdownDefaultNullOrder;
+	private boolean pushdownDefaultNullOrder = true;
 	
 	public Properties getProperties() {
 		return properties;

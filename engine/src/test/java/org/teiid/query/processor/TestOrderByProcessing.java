@@ -148,7 +148,7 @@ public class TestOrderByProcessing {
 
         ProcessorPlan plan = TestOptimizer.helpPlan("select e1 from pm1.g1 order by e1 desc, e2 asc", //$NON-NLS-1$ 
         		RealMetadataFactory.example1Cached(), null, capFinder, 
-        		new String[] { "SELECT g_0.e1 AS c_0 FROM pm1.g1 AS g_0 ORDER BY c_0 DESC, g_0.e2"},  //$NON-NLS-1$
+        		new String[] { "SELECT g_0.e1 AS c_0 FROM pm1.g1 AS g_0 ORDER BY c_0 DESC NULLS LAST, g_0.e2 NULLS FIRST"},  //$NON-NLS-1$
     			TestOptimizer.ComparisonMode.EXACT_COMMAND_STRING);
         
         TestOptimizer.checkNodeTypes(plan, TestOptimizer.FULL_PUSHDOWN);
