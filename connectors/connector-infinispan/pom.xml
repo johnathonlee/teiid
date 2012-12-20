@@ -3,12 +3,12 @@
     <parent>
         <artifactId>connectors</artifactId>
         <groupId>org.jboss.teiid</groupId>
-        <version>7.7.3</version>
+        <version>7.7.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>connector-infinispan</artifactId>
     <groupId>org.jboss.teiid.connectors</groupId>
-    <packaging>ear</packaging>
+    <packaging>pom</packaging>
     <name>Infinispan Connector</name>
     <description>This connector reads data from a Infinispan cache</description>
     <properties>
@@ -67,10 +67,23 @@
     <build>
  
         <plugins>     
+            
+            <!-- Specify the compiler options and settings 
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+					<showDeprecation>false</showDeprecation>
+					<showWarnings>false</showWarnings>
+				</configuration>
+			</plugin>-->
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
-                    <outputDirectory>target/connector-infinispan-7.7.3/connector-infinispan.rar</outputDirectory>
+                    <outputDirectory>target/connector-infinispan-7.7.1/connector-infinispan.rar</outputDirectory>
                 </configuration>
                 <executions>
                     <execution>
