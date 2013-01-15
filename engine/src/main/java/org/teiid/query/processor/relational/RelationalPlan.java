@@ -229,6 +229,7 @@ public class RelationalPlan extends ProcessorPlan {
 			}
 			plan.setWith(newWith);
 		}
+		plan.multisourceUpdate = this.multisourceUpdate; 
 		return plan;
 	}
 	
