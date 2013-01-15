@@ -22,6 +22,7 @@
 
 package org.teiid.query.processor;
 
+import static org.junit.Assert.*;
 import static org.teiid.query.processor.TestProcessor.*;
 
 import java.io.FileInputStream;
@@ -49,6 +50,7 @@ import org.teiid.metadata.Table;
 import org.teiid.query.mapping.relational.QueryNode;
 import org.teiid.query.metadata.TransformationMetadata;
 import org.teiid.query.optimizer.capabilities.DefaultCapabilitiesFinder;
+import org.teiid.query.sql.symbol.Expression;
 import org.teiid.query.unittest.RealMetadataFactory;
 import org.teiid.query.unittest.TimestampUtil;
 
@@ -301,6 +303,8 @@ public class TestSQLXMLProcessing {
         };    
     
         process(sql, expected);
+        ProcessorPlan plan = process(sql, expected);
+        assertEquals(DataTypeManager.DefaultDataClasses.INTEGER, ((Expression)plan.getOutputElements().get(0)).getType());
     }
     
     @Test public void testXmlTableDescendantPath() throws Exception {
@@ -494,10 +498,11 @@ public class TestSQLXMLProcessing {
     	TimestampWithTimezone.resetCalendar(null); //$NON-NLS-1$
     }
     
-	private void process(String sql, List<?>[] expected) throws Exception {
+	private ProcessorPlan process(String sql, List<?>[] expected) throws Exception {
         ProcessorPlan plan = helpGetPlan(helpParse(sql), RealMetadataFactory.example1Cached(), new DefaultCapabilitiesFinder(), createCommandContext());
         
         helpProcess(plan, createCommandContext(), dataManager, expected);
+        return plan;
 	}
 	
 	public static BlobType blobFromFile(final String file) {
