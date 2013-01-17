@@ -266,7 +266,6 @@ public class Request implements SecurityFunctionEvaluator {
         this.context.setRequestId(this.requestId);
         this.context.setDQPWorkContext(this.workContext);
         this.context.setTransactionService(this.transactionService);
-        this.context.setTransactionContext(this.transactionContext);
     }
     
     @Override
@@ -374,6 +373,7 @@ public class Request implements SecurityFunctionEvaluator {
         
         tc.setIsolationLevel(requestMsg.getTransactionIsolation());
         this.transactionContext = tc;
+        this.context.setTransactionContext(tc);
         this.processor = new QueryProcessor(processPlan, context, bufferManager, processorDataManager);
     }
 

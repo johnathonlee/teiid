@@ -45,7 +45,6 @@ import org.teiid.query.sql.lang.Command;
 import org.teiid.query.tempdata.TempTableStore;
 import org.teiid.query.tempdata.TempTableStore.TransactionMode;
 import org.teiid.query.unittest.RealMetadataFactory;
-import org.teiid.query.util.ContextProperties;
 
 
 
@@ -126,6 +125,7 @@ public class TestRequest extends TestCase {
         
         Request request = helpProcessMessage(message, null, workContext);
         assertEquals("1", request.context.getConnectionID()); //$NON-NLS-1$
+        assertNotNull(request.context.getTransactionContext());
     }
 
     private Request helpProcessMessage(RequestMessage message, SessionAwareCache<PreparedPlan> cache, DQPWorkContext workContext) throws TeiidComponentException,
