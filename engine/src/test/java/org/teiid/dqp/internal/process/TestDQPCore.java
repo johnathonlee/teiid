@@ -332,13 +332,18 @@ public class TestDQPCore {
         assertEquals(ThreadState.IDLE, item.getThreadState());
         assertTrue(item.resultsBuffer.getManagedRowCount() <= rowsPerBatch*23);
         //pull the rest of the results
-        for (int j = 0; j < 48; j++) {
-            item = core.getRequestWorkItem(DQPWorkContext.getWorkContext().getRequestID(reqMsg.getExecutionId()));
-
-	        message = core.processCursorRequest(reqMsg.getExecutionId(), (j + 2) * rowsPerBatch + 1, rowsPerBatch);
-	        rm = message.get(5000, TimeUnit.MILLISECONDS);
-	        assertNull(rm.getException());
-	        assertEquals(rowsPerBatch, rm.getResultsList().size());
+        int start = 17;
+        while (true) {
+        	item = core.getRequestWorkItem(DQPWorkContext.getWorkContext().getRequestID(reqMsg.getExecutionId()));
+        	 
+        	message = core.processCursorRequest(reqMsg.getExecutionId(), start, rowsPerBatch);
+        	rm = message.get(5000, TimeUnit.MILLISECONDS);
+        	assertNull(rm.getException());
+        	assertTrue(rowsPerBatch >= rm.getResultsList().size());
+        	start += rm.getResultsList().size();
+        	if (rm.getFinalRow() == rm.getLastRow()) {
+        		break;
+        	}
         }
     }
     

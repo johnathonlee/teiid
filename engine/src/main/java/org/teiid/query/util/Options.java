@@ -31,10 +31,12 @@ public class Options {
 
 	public static final String UNNEST_DEFAULT = "org.teiid.subqueryUnnestDefault"; //$NON-NLS-1$
 	public static final String PUSHDOWN_DEFAULT_NULL_ORDER = "org.teiid.pushdownDefaultNullOrder"; //$NON-NLS-1$ 
+	public static final String JOIN_PREFETCH_BATCHES = "org.teiid.joinPrefetchBatches"; //$NON-NLS-1$
 
 	private Properties properties;
 	private boolean subqueryUnnestDefault;
 	private boolean pushdownDefaultNullOrder = true;
+	private int joinPrefetchBatches = 10;
 	
 	public Properties getProperties() {
 		return properties;
@@ -69,5 +71,17 @@ public class Options {
 		this.pushdownDefaultNullOrder = p;
 		return this;
 	}
-
+	
+	public void setJoinPrefetchBatches(int joinPrefetchBatches) {
+		this.joinPrefetchBatches = joinPrefetchBatches;
+	}
+	
+	public int getJoinPrefetchBatches() {
+		return joinPrefetchBatches;
+	}
+	
+	public Options joinPrefetchBatches(int i) {
+		this.joinPrefetchBatches = i;
+		return this;
+	}
 }
