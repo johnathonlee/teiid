@@ -174,7 +174,15 @@ public class DataTypeManager {
 	};
 
 	public static final int MAX_STRING_LENGTH = 4000;
-	public static final int MAX_LOB_MEMORY_BYTES = 1 << 13;
+	public static final int MAX_LOB_MEMORY_BYTES = Math.max(nextPowOf2(2*MAX_STRING_LENGTH), 1<<13);
+	
+	public static int nextPowOf2(int val) {
+		int result = 1;
+        while (result < val) {
+        	result <<= 1;
+        }
+        return result;
+	}
 	
 	public static final class DataTypeAliases {
 		public static final String VARCHAR = "varchar"; //$NON-NLS-1$

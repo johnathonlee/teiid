@@ -431,15 +431,18 @@ public class DQPCore implements DQP {
 		}
     }
     
-    public boolean hasWaitingPlans(RequestWorkItem item) {
-    	synchronized (waitingPlans) {
-    		if (!waitingPlans.isEmpty()) {
-    			return true;
-    		}
-    		this.bufferFullPlans.add(item);
-		}
-    	return false;
-    }
+    public boolean blockOnOutputBuffer(RequestWorkItem item) {
+     	synchronized (waitingPlans) {
+     		if (!waitingPlans.isEmpty()) {
+     			return false;
+     		}
+     		if (item.useCallingThread || item.getDqpWorkContext().getSession().isEmbedded()) {
+     			return false;
+     		}
+     		this.bufferFullPlans.add(item);
+ 		}
+     	return true;
+     }
     
     void removeRequest(final RequestWorkItem workItem) {
     	finishProcessing(workItem);

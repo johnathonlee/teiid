@@ -550,11 +550,12 @@ public class RequestWorkItem extends AbstractWorkItem implements PrioritizedRunn
 					super.flushBatchDirect(batch, add);
 					if (!add && !processor.hasFinalBuffer()) {
 						 resultsBuffer.setRowCount(batch.getEndRow());
-					} else if (!processor.hasFinalBuffer() //restrict the buffer size for forward only results
+					} else if (isForwardOnly() && add 
+							&& !processor.hasFinalBuffer() //restrict the buffer size for forward only results
 							&& !batch.getTerminationFlag() 
 							&& transactionState != TransactionState.ACTIVE
-							&& this.getTupleBuffer().getManagedRowCount() >= OUTPUT_BUFFER_MAX_BATCHES * this.getTupleBuffer().getBatchSize()) {
-						if (!dqpCore.hasWaitingPlans(RequestWorkItem.this)) {
+							&& resultsBuffer.getManagedRowCount() >= OUTPUT_BUFFER_MAX_BATCHES * resultsBuffer.getBatchSize()) {
+						if (dqpCore.blockOnOutputBuffer(RequestWorkItem.this)) {
 							//requestMore will trigger more processing
 							throw BlockedException.block(requestID, "Blocking due to full results TupleBuffer", //$NON-NLS-1$
 									this.getTupleBuffer().getId(), "rows", this.getTupleBuffer().getManagedRowCount(), "batch size", this.getTupleBuffer().getBatchSize()); //$NON-NLS-1$ //$NON-NLS-2$ 
