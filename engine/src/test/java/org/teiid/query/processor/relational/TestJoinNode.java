@@ -174,7 +174,7 @@ public class TestJoinNode {
         
         List leftElements = new ArrayList();
         leftElements.add(es1);
-        leftNode = new FakeRelationalNode(1, leftTuples);
+        leftNode = new BlockingFakeRelationalNode(1, leftTuples);
         leftNode.setElements(leftElements);
         
         List rightElements = new ArrayList();
