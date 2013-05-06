@@ -53,8 +53,8 @@ import org.teiid.events.EventDistributor;
 import org.teiid.language.SQLConstants.Reserved;
 import org.teiid.logging.LogConstants;
 import org.teiid.logging.LogManager;
-import org.teiid.metadata.MetadataRepository;
 import org.teiid.metadata.FunctionMethod.Determinism;
+import org.teiid.metadata.MetadataRepository;
 import org.teiid.query.QueryPlugin;
 import org.teiid.query.eval.Evaluator;
 import org.teiid.query.metadata.QueryMetadataInterface;
@@ -67,21 +67,7 @@ import org.teiid.query.processor.CollectionTupleSource;
 import org.teiid.query.processor.ProcessorDataManager;
 import org.teiid.query.processor.QueryProcessor;
 import org.teiid.query.resolver.util.ResolverUtil;
-import org.teiid.query.sql.lang.CacheHint;
-import org.teiid.query.sql.lang.Command;
-import org.teiid.query.sql.lang.CompareCriteria;
-import org.teiid.query.sql.lang.Create;
-import org.teiid.query.sql.lang.Criteria;
-import org.teiid.query.sql.lang.Delete;
-import org.teiid.query.sql.lang.Drop;
-import org.teiid.query.sql.lang.Insert;
-import org.teiid.query.sql.lang.Option;
-import org.teiid.query.sql.lang.ProcedureContainer;
-import org.teiid.query.sql.lang.Query;
-import org.teiid.query.sql.lang.SPParameter;
-import org.teiid.query.sql.lang.StoredProcedure;
-import org.teiid.query.sql.lang.UnaryFromClause;
-import org.teiid.query.sql.lang.Update;
+import org.teiid.query.sql.lang.*;
 import org.teiid.query.sql.navigator.PostOrderNavigator;
 import org.teiid.query.sql.symbol.Constant;
 import org.teiid.query.sql.symbol.ElementSymbol;
@@ -354,7 +340,7 @@ public class TempTableDataManager implements ProcessorDataManager {
 	}
 
 	private TupleSource registerQuery(final CommandContext context,
-			TempTableStore contextStore, Query query)
+			final TempTableStore contextStore, final Query query)
 			throws TeiidComponentException, QueryMetadataException,
 			TeiidProcessingException, ExpressionEvaluationException,
 			QueryProcessingException {
@@ -416,16 +402,36 @@ public class TempTableDataManager implements ProcessorDataManager {
 			} 
 			table = globalStore.getTempTableStore().getOrCreateTempTable(tableName, query, bufferManager, false, false, context);
 			context.accessedDataObject(group.getMetadataID());
-		} else {
-			table = contextStore.getOrCreateTempTable(tableName, query, bufferManager, true, false, context);
-			if (context.getDataObjects() != null) {
-				Object id = RelationalPlanner.getTrackableGroup(group, context.getMetadata());
-				if (id != null) {
-					context.accessedDataObject(group.getMetadataID());
+			return table.createTupleSource(query.getProjectedSymbols(), query.getCriteria(), query.getOrderBy());
+		}
+		final GroupSymbol g = group; 
+		//it's not expected for a blocked exception to bubble up from here, so return a tuplesource to perform getOrCreateTempTable
+		return new TupleSource() {
+			TupleSource ts = null;
+			
+			@Override
+			public List<?> nextTuple() throws TeiidComponentException,
+					TeiidProcessingException {
+				if (ts == null) {
+					TempTable tt = contextStore.getOrCreateTempTable(tableName, query, bufferManager, true, false, context);
+					if (context.getDataObjects() != null) {
+						Object id = RelationalPlanner.getTrackableGroup(g, context.getMetadata());
+						if (id != null) {
+							context.accessedDataObject(g.getMetadataID());
+						}
+					}
+					ts = tt.createTupleSource(query.getProjectedSymbols(), query.getCriteria(), query.getOrderBy());
+				}
+				return ts.nextTuple();
+			}
+			
+			@Override
+			public void closeSource() {
+				if (ts != null) {
+					ts.closeSource();
 				}
 			}
-		}
-		return table.createTupleSource(query.getProjectedSymbols(), query.getCriteria(), query.getOrderBy());
+		};
 	}
 
 	private void loadAsynch(final CommandContext context,
