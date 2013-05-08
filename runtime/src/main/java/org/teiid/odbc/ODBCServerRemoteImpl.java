@@ -70,6 +70,7 @@ public class ODBCServerRemoteImpl implements ODBCServerRemote {
 	private static final String UNNAMED = "UNNAMED"; //$NON-NLS-1$
 	private static Pattern pgToastLiteral = Pattern.compile("'pg_toast'");//$NON-NLS-1$
 	private static Pattern pgCast = Pattern.compile("(\\s[^']+)::[A-Za-z0-9]*"); //$NON-NLS-1$
+	private static Pattern pgCastLiterals = Pattern.compile("\\s((?:'[^']*')+|[^']+)::([A-Za-z0-9]*)"); //$NON-NLS-1$
 	private static Pattern setPattern = Pattern.compile("set\\s+(\\w+)\\s+to\\s+((?:'[^']*')+)", Pattern.DOTALL|Pattern.CASE_INSENSITIVE);//$NON-NLS-1$
 	
 	private static Pattern pkPattern = Pattern.compile("select ta.attname, ia.attnum, ic.relname, n.nspname, tc.relname " +//$NON-NLS-1$
@@ -628,6 +629,8 @@ public class ODBCServerRemoteImpl implements ODBCServerRemote {
 		}		
 		//these are somewhat dangerous
 		modified = pgCast.matcher(modified).replaceAll("$1"); //$NON-NLS-1$
+		modified = pgCastLiterals.matcher(modified).replaceAll(" cast($1 as $2)"); //$NON-NLS-1$
+		
 		//TODO: use an appropriate cast
 		modified = pgToastLiteral.matcher(modified).replaceAll("'SYS'"); //$NON-NLS-1$
 		return modified;
