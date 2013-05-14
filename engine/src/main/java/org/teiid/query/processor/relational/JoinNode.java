@@ -170,62 +170,60 @@ public class JoinNode extends SubqueryAwareRelationalNode {
 		return clonedNode;
 	}
 
-	/**
-	 * @see org.teiid.query.processor.relational.RelationalNode#nextBatchDirect()
-	 * @since 4.2
-	 */
-	protected TupleBatch nextBatchDirect() throws BlockedException,
-			TeiidComponentException, TeiidProcessingException {
-		try {
-			if (state == State.LOAD_LEFT) {
-				if (this.joinType != JoinType.JOIN_FULL_OUTER) {
-					this.joinStrategy.leftSource
-							.setImplicitBuffer(ImplicitBuffer.NONE);
-				}
-				// left child was already opened by the join node
-				this.joinStrategy.loadLeft();
-				if (isDependent()) {
-					TupleBuffer buffer = this.joinStrategy.leftSource
-							.getTupleBuffer();
-					// the tuplebuffer may be from a lower node, so pass in the
-					// schema
-					dvs = new DependentValueSource(buffer);
-					dvs.setDistinct(this.joinStrategy.leftSource.isDistinct());
-					this.getContext().getVariableContext()
-							.setGlobalValue(this.dependentValueSource, dvs);
-				}
-				state = State.LOAD_RIGHT;
-			}
-		} catch (BlockedException e) {
-			if (!isDependent()) {
-				this.joinStrategy.openRight();
-				this.joinStrategy.loadRight();
-			}
-			throw e;
-		}
-		try {
-			if (state == State.LOAD_RIGHT) {
-				this.joinStrategy.openRight();
-				this.joinStrategy.loadRight();
-				state = State.EXECUTE;
-			}
-			this.joinStrategy.process();
-			this.terminateBatches();
-		} catch (BatchAvailableException e) {
-			// pull the batch
-		} catch (BlockedException e) {
-			// TODO: this leads to duplicate exceptions, we
-			// could track which side is blocking
-			try {
-				this.joinStrategy.leftSource.prefetch(true);
-			} catch (BlockedException e1) {
-
-			}
-			this.joinStrategy.rightSource.prefetch(true);
-			throw e;
-		}
-		return pullBatch();
-	}
+    /** 
+     * @see org.teiid.query.processor.relational.RelationalNode#nextBatchDirect()
+     * @since 4.2
+     */
+    protected TupleBatch nextBatchDirect() throws BlockedException,
+                                          TeiidComponentException,
+                                          TeiidProcessingException {
+    	try {
+	    	if (state == State.LOAD_LEFT) {
+	        	if (this.joinType != JoinType.JOIN_FULL_OUTER) {
+	            	this.joinStrategy.leftSource.setImplicitBuffer(ImplicitBuffer.NONE);
+	            }
+	        	//left child was already opened by the join node
+	            this.joinStrategy.loadLeft();
+	            if (isDependent()) { 
+	                TupleBuffer buffer = this.joinStrategy.leftSource.getTupleBuffer();
+	                //the tuplebuffer may be from a lower node, so pass in the schema
+	                dvs = new DependentValueSource(buffer);
+	                dvs.setDistinct(this.joinStrategy.leftSource.isDistinct());
+	                this.getContext().getVariableContext().setGlobalValue(this.dependentValueSource, dvs);
+	            }
+	            state = State.LOAD_RIGHT;
+	        }
+    	} catch (BlockedException e) {
+    		if (!isDependent()) {
+    			this.joinStrategy.openRight();
+                this.joinStrategy.loadRight();
+                this.joinStrategy.rightSource.prefetch(true);
+    		}
+    		throw e;
+    	}
+        try {
+            if (state == State.LOAD_RIGHT) {
+	        	this.joinStrategy.openRight();
+	            this.joinStrategy.loadRight();
+                state = State.EXECUTE;
+            }
+        	this.joinStrategy.process();
+        	this.terminateBatches();
+        } catch (BatchAvailableException e) {
+        	//pull the batch
+        } catch (BlockedException e) {
+        	//TODO: this leads to duplicate exceptions, we 
+        	//could track which side is blocking
+        	try {
+        		this.joinStrategy.leftSource.prefetch(true);
+        	} catch (BlockedException e1) {
+        		
+        	}
+        	this.joinStrategy.rightSource.prefetch(true);
+        	throw e;
+        }
+        return pullBatch();
+    }
 
 	/**
 	 * @see org.teiid.query.processor.relational.RelationalNode#getDescriptionProperties()
