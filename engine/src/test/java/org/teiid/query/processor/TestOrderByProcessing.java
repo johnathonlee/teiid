@@ -205,5 +205,24 @@ public class TestOrderByProcessing {
         ProcessorPlan plan = TestOptimizer.getPlan(TestOptimizer.helpGetCommand("select e1 from pm1.g1 order by e1 desc, e2 asc", metadata, null), metadata, capFinder, null, true, cc);
         TestOptimizer.checkAtomicQueries(new String[] { "SELECT g_0.e1 AS c_0 FROM pm1.g1 AS g_0 ORDER BY c_0 DESC NULLS LAST, g_0.e2 NULLS FIRST"}, plan);  //$NON-NLS-1$
         TestOptimizer.checkNodeTypes(plan, TestOptimizer.FULL_PUSHDOWN);
-	}
+    }
+    
+    @Test public void testSortFunctionOverView() {
+    	String sql = "select * from (select * from pm1.g1) as x order by cast(e2 as string) limit 1"; //$NON-NLS-1$
+
+        ProcessorPlan plan = helpGetPlan(sql, RealMetadataFactory.example1Cached());
+        FakeDataManager fdm = new FakeDataManager();
+        sampleData1(fdm);
+        helpProcess(plan, fdm, new List[] {Arrays.asList("a", 0, false, 2.0d)});
+    }
+    
+    @Test public void testSortFunctionOverView1() {
+    	String sql = "select e1 from (select * from pm1.g1) as x order by cast(e3 as string) desc, cast(e2 as string) limit 1"; //$NON-NLS-1$
+
+        ProcessorPlan plan = helpGetPlan(sql, RealMetadataFactory.example1Cached());
+        FakeDataManager fdm = new FakeDataManager();
+        sampleData1(fdm);
+        helpProcess(plan, fdm, new List[] {Arrays.asList("c")});
+    }
+
 }
