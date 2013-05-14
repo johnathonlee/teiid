@@ -495,6 +495,7 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 	private AtomicLong storageReads = new AtomicLong();
 	
 	private long minDefrag = DEFAULT_MIN_DEFRAG;
+	private BufferManagerImpl bufferManager;
 	
 	@Override
 	public void initialize() throws TeiidComponentException {
@@ -815,12 +816,13 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 	}
 	
 	@Override
-	public void addToCacheGroup(Long gid, Long oid) {
+	public boolean addToCacheGroup(Long gid, Long oid) {
 		Map<Long, PhysicalInfo> map = physicalMapping.get(gid);
 		if (map == null) {
-			return;
+			return false;
 		}
 		map.put(oid, null);
+		return true;
 	}
 	
 	@Override
@@ -905,7 +907,11 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 				block = blockStore.writeToStorageBlock(info, is);
 			}
 		} catch (IOException e) {
-			LogManager.logError(LogConstants.CTX_BUFFER_MGR, e, "Error transferring block to storage " + oid); //$NON-NLS-1$
+			if (LogManager.isMessageToBeRecorded(LogConstants.CTX_BUFFER_MGR, MessageLevel.DETAIL)) {
+				LogManager.logError(LogConstants.CTX_BUFFER_MGR, e, "Error transferring block to storage " + oid + " " + info.gid); //$NON-NLS-1$ //$NON-NLS-2$
+			} else {
+				LogManager.logError(LogConstants.CTX_BUFFER_MGR, "Error transferring block to storage " + oid + " " + info.gid + " " + e.getMessage()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			}
 		} finally {
 			//ensure post conditions
 			synchronized (info) {
@@ -949,6 +955,10 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 					} finally {
 						freedLock.unlock();
 					}
+				}
+				if (block == EMPTY_ADDRESS && demote && this.bufferManager != null) {
+					//failed to demote
+					this.bufferManager.invalidCacheGroup(info.gid);
 				}
 			}
 		}
@@ -1082,6 +1092,10 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 	
 	public int getMaxMemoryBlocks() {
 		return maxMemoryBlocks;
+	}
+	
+	public void setBufferManager(BufferManagerImpl bufferManager) {
+		this.bufferManager = bufferManager;
 	}
 
 }

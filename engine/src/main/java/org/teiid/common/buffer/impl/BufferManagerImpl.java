@@ -54,12 +54,13 @@ import org.teiid.common.buffer.LobManager.ReferenceMode;
 import org.teiid.core.TeiidComponentException;
 import org.teiid.core.TeiidRuntimeException;
 import org.teiid.core.types.DataTypeManager;
-import org.teiid.core.types.Streamable;
 import org.teiid.core.types.DataTypeManager.WeakReferenceHashedValueCache;
+import org.teiid.core.types.Streamable;
 import org.teiid.dqp.internal.process.DQPConfiguration;
 import org.teiid.logging.LogConstants;
 import org.teiid.logging.LogManager;
 import org.teiid.logging.MessageLevel;
+import org.teiid.query.QueryPlugin;
 import org.teiid.query.processor.relational.ListNestedSortComparator;
 import org.teiid.query.sql.symbol.Expression;
 
@@ -205,7 +206,10 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 			}
 			maxReserveBytes.addAndGet(-BATCH_OVERHEAD);
 			reserveBatchBytes.addAndGet(-BATCH_OVERHEAD);
-			cache.addToCacheGroup(id, ce.getId());
+			if (!cache.addToCacheGroup(id, ce.getId())) {
+				this.remove();
+				throw new TeiidComponentException(QueryPlugin.Util.getString("TEIID31138", id));
+			}
 			addMemoryEntry(ce, true);
 			return oid;
 		}
@@ -769,7 +773,7 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 	/**
 	 * Get a CacheEntry without hitting storage
 	 */
-	CacheEntry fastGet(Long batch, boolean prefersMemory, boolean retain) {
+	CacheEntry fastGet(Long batch, Boolean prefersMemory, boolean retain) {
 		CacheEntry ce = null;
 		if (retain) {
 			ce = memoryEntries.get(batch);
@@ -793,7 +797,7 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 			}
 			return ce;
 		}
-		if (prefersMemory) {
+		if (prefersMemory == null || prefersMemory) {
 			BatchSoftReference bsr = softCache.remove(batch);
 			if (bsr != null) {
 				ce = bsr.get();
@@ -801,7 +805,8 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 					clearSoftReference(bsr);
 				}
 			}
-		} else if (useWeakReferences) {
+		}
+		if (ce == null && (prefersMemory == null || !prefersMemory) && useWeakReferences) {
 			ce = weakReferenceCache.getByHash(batch);
 			if (ce == null || !ce.getId().equals(batch)) {
 				return null;
@@ -861,7 +866,7 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 		activeBatchBytes.getAndAdd(ce.getSizeEstimate());
 	}
 	
-	void removeCacheGroup(Long id, boolean prefersMemory) {
+	void removeCacheGroup(Long id, Boolean prefersMemory) {
 		cleanSoftReferences();
 		Collection<Long> vals = cache.removeCacheGroup(id);
 		long overhead = vals.size() * BATCH_OVERHEAD;
@@ -992,6 +997,10 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 	public Streamable<?> persistLob(Streamable<?> lob, FileStore store,
 			byte[] bytes) throws TeiidComponentException {
 		return LobManager.persistLob(lob, store, bytes, inlineLobs, DataTypeManager.MAX_LOB_MEMORY_BYTES);
+	}
+
+	public void invalidCacheGroup(Long gid) {
+		removeCacheGroup(gid, null);
 	}
 	
 }
