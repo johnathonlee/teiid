@@ -173,7 +173,7 @@ public class DataTypeManager {
 		}
 	};
 
-	public static final int MAX_STRING_LENGTH = 4000;
+	public static final int MAX_STRING_LENGTH = PropertiesUtils.getIntProperty(System.getProperties(), "org.teiid.maxStringLength", 4000); //$NON-NLS-1$
 	public static final int MAX_LOB_MEMORY_BYTES = Math.max(nextPowOf2(2*MAX_STRING_LENGTH), 1<<13);
 	
 	public static int nextPowOf2(int val) {
