@@ -54,6 +54,7 @@ import org.teiid.core.types.InputStreamFactory;
 import org.teiid.core.types.SQLXMLImpl;
 import org.teiid.core.types.Streamable;
 import org.teiid.core.types.XMLType;
+import org.teiid.core.util.PropertiesUtils;
 import org.teiid.core.util.SqlUtil;
 import org.teiid.core.util.TimestampWithTimezone;
 import org.teiid.jdbc.BatchResults.Batch;
@@ -73,6 +74,7 @@ public class ResultSetImpl extends WrapperImpl implements ResultSet, BatchFetche
 	private static Logger logger = Logger.getLogger("org.teiid.jdbc"); //$NON-NLS-1$
 
 	private static final int BEFORE_FIRST_ROW = 0;
+	public static final boolean DISABLE_RESULTSET_FETCH_SIZE = PropertiesUtils.getBooleanProperty(System.getProperties(), "org.teiid.disableResultSetFetchSize",false);
 
 	// the object which was last read from Results
 	private Object currentValue;
@@ -1370,7 +1372,7 @@ public class ResultSetImpl extends WrapperImpl implements ResultSet, BatchFetche
         // sets the fetch size on this statement
         if (rows == 0) {
             this.fetchSize = BaseDataSource.DEFAULT_FETCH_SIZE;
-        } else {
+        } else if (!(DISABLE_RESULTSET_FETCH_SIZE)) {
             this.fetchSize = rows;
         }
 	}
