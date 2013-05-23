@@ -25,13 +25,12 @@ package org.teiid.client;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.teiid.client.RequestMessage;
+import junit.framework.TestCase;
+
 import org.teiid.client.RequestMessage.ShowPlan;
 import org.teiid.client.RequestMessage.StatementType;
 import org.teiid.core.TeiidProcessingException;
 import org.teiid.core.util.UnitTestUtil;
-
-import junit.framework.TestCase;
 
 
 public class TestRequestMessage extends TestCase {
@@ -91,7 +90,7 @@ public class TestRequestMessage extends TestCase {
         assertEquals("xMLFormat", copy.getXMLFormat()); //$NON-NLS-1$
         assertEquals(ShowPlan.ON, copy.getShowPlan());
         assertEquals(1313, copy.getRowLimit());
-        
+        assertTrue(copy.isDelaySerialization());
     }
     
     public void testInvalidTxnAutoWrap() {

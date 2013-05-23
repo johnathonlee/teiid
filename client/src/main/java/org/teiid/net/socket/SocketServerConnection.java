@@ -372,4 +372,9 @@ public class SocketServerConnection implements ServerConnection {
 			}
 		}
 	}
+	
+	@Override
+	public boolean isLocal() {
+		return false;
+	}
 }

@@ -34,17 +34,18 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import org.teiid.client.RequestMessage;
+import org.teiid.client.RequestMessage.ShowPlan;
+import org.teiid.client.ResizingArrayList;
 import org.teiid.client.ResultsMessage;
 import org.teiid.client.SourceWarning;
-import org.teiid.client.RequestMessage.ShowPlan;
 import org.teiid.client.lob.LobChunk;
 import org.teiid.client.metadata.ParameterInfo;
 import org.teiid.client.util.ResultsReceiver;
 import org.teiid.client.xa.XATransactionException;
 import org.teiid.common.buffer.BlockedException;
+import org.teiid.common.buffer.BufferManager.TupleSourceType;
 import org.teiid.common.buffer.TupleBatch;
 import org.teiid.common.buffer.TupleBuffer;
-import org.teiid.common.buffer.BufferManager.TupleSourceType;
 import org.teiid.core.TeiidComponentException;
 import org.teiid.core.TeiidException;
 import org.teiid.core.TeiidProcessingException;
@@ -59,14 +60,14 @@ import org.teiid.dqp.internal.process.ThreadReuseExecutor.PrioritizedRunnable;
 import org.teiid.dqp.message.AtomicRequestID;
 import org.teiid.dqp.message.RequestID;
 import org.teiid.dqp.service.TransactionContext;
-import org.teiid.dqp.service.TransactionService;
 import org.teiid.dqp.service.TransactionContext.Scope;
-import org.teiid.jdbc.SQLStates;
+import org.teiid.dqp.service.TransactionService;
 import org.teiid.jdbc.EnhancedTimer.Task;
+import org.teiid.jdbc.SQLStates;
+import org.teiid.logging.CommandLogMessage.Event;
 import org.teiid.logging.LogConstants;
 import org.teiid.logging.LogManager;
 import org.teiid.logging.MessageLevel;
-import org.teiid.logging.CommandLogMessage.Event;
 import org.teiid.metadata.FunctionMethod.Determinism;
 import org.teiid.query.QueryPlugin;
 import org.teiid.query.analysis.AnalysisRecord;
@@ -82,7 +83,8 @@ import org.teiid.query.sql.symbol.SingleElementSymbol;
 public class RequestWorkItem extends AbstractWorkItem implements PrioritizedRunnable {
 	
 	//TODO: this could be configurable
-	private static final int OUTPUT_BUFFER_MAX_BATCHES = 20;
+	private static final int OUTPUT_BUFFER_MAX_BATCHES = 8;
+	private static final int CLIENT_FETCH_MAX_BATCHES = 3;
 
 	private final class WorkWrapper<T> implements
 			DQPCore.CompletionListener<T> {
@@ -628,16 +630,33 @@ public class RequestWorkItem extends AbstractWorkItem implements PrioritizedRunn
 	
 			//TODO: support fetching more than 1 batch
 			boolean fromBuffer = false;
+			int count = this.end - this.begin + 1;
     		if (batch == null || !(batch.containsRow(this.begin) || (batch.getTerminationFlag() && batch.getEndRow() <= this.begin))) {
 	    		if (savedBatch != null && savedBatch.containsRow(this.begin)) {
 	    			batch = savedBatch;
 	    		} else {
 	    			batch = resultsBuffer.getBatch(begin);
+	    			//fetch more than 1 batch from the buffer
+	    			boolean first = true;
+	    			int batches = CLIENT_FETCH_MAX_BATCHES;
+	    			for (int i = 1; i < batches && batch.getRowCount() + resultsBuffer.getBatchSize() <= count && !batch.getTerminationFlag(); i++) {
+	    				TupleBatch next = resultsBuffer.getBatch(batch.getEndRow() + 1);
+	    				if (next.getRowCount() == 0) {
+	    					break;
+	    				}
+	    				if (first) {
+	    					first = false;
+	    					TupleBatch old = batch;
+	    					batch = new TupleBatch(batch.getBeginRow(), new ResizingArrayList<List<?>>(batch.getTuples()));
+	    					batch.setTerminationFlag(old.getTerminationFlag());
+	    				}
+	    				batch.getTuples().addAll(next.getTuples());
+	    				batch.setTerminationFlag(next.getTerminationFlag());
+	    			}
 	    		}
 	    		savedBatch = null;
 	    		fromBuffer = true;
 	    	}
-    		int count = this.end - this.begin + 1;
     		if (batch.getRowCount() > count) {
     			int beginRow = Math.min(this.begin, batch.getEndRow() - count + 1);
     			int endRow = Math.min(beginRow + count - 1, batch.getEndRow());
@@ -661,6 +680,9 @@ public class RequestWorkItem extends AbstractWorkItem implements PrioritizedRunn
 	        response.setUpdateResult(this.returnsUpdateCount);
 	        // set final row
 	        response.setFinalRow(finalRowCount);
+	        if (response.getLastRow() == finalRowCount) {
+	        	response.setDelayDeserialization(false);
+	        }
 	
 	        // send any warnings with the response object
 	        List<Throwable> responseWarnings = new ArrayList<Throwable>();
@@ -707,6 +729,7 @@ public class RequestWorkItem extends AbstractWorkItem implements PrioritizedRunn
         ResultsMessage result = new ResultsMessage(batch, columnNames, dataTypes);
         result.setClientSerializationVersion((byte)(this.dqpWorkContext.getClientVersion().compareTo(Version.SEVEN_6) >= 0?1:0));
         setAnalysisRecords(result);
+        result.setDelayDeserialization(this.requestMsg.isDelaySerialization() && this.originalCommand.returnsResultSet());
         return result;
     }
     
