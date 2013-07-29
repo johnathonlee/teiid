@@ -562,7 +562,20 @@ public class BatchSerializer {
     }
     
     public static List<List<Object>> readBatch(ObjectInput in, String[] types, byte version) throws IOException, ClassNotFoundException {
-        int rows = in.readInt();
+        int rows = 0;
+        try {
+	    rows = in.readInt();
+        } catch (IOException e) {
+            //7.4 compatibility
+            if (types == null || types.length == 0) {
+                List<Object>[] result = (List[])in.readObject();
+                ArrayList<List<Object>> batch = new ArrayList<List<Object>>();
+                batch.addAll(Arrays.asList(result));
+                return batch;
+	}
+            throw e;
+        }
+
         if (rows == 0) {
             return new ArrayList<List<Object>>(0);
         } else if (rows > 0) {
