@@ -304,6 +304,8 @@ public class PlanToProcessConverter {
                         aNode = new AccessNode(getID());
                         processNode = aNode;
                                                 
+                        aNode.setShouldEvaluateExpressions(EvaluatableVisitor.needsProcessingEvaluation(command));
+                        
                         //-- special handling for temp tables. currently they cannot perform projection
                         try {
                             if (command instanceof Query) {
@@ -311,8 +313,7 @@ public class PlanToProcessConverter {
                             }
                         } catch (QueryMetadataException err) {
                             throw new TeiidComponentException(err);
-                        }
-                        aNode.setShouldEvaluateExpressions(EvaluatableVisitor.needsProcessingEvaluation(command));
+                        }                        
                     }
                     
                     if (command instanceof QueryCommand) {
