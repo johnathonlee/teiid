@@ -29,7 +29,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.OptionalDataException;
 import java.io.Serializable;
-import java.sql.ResultSet;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -94,7 +93,7 @@ public class RequestMessage implements Externalizable {
     private boolean noExec;
     private transient boolean sync;
 
-	private boolean delaySerialization = true;
+	private boolean delaySerialization;
     
     public RequestMessage() {
     }
@@ -182,7 +181,6 @@ public class RequestMessage implements Externalizable {
      */
     public void setCursorType(int cursorType) {
         this.cursorType = cursorType;
-        this.delaySerialization = this.cursorType == ResultSet.TYPE_FORWARD_ONLY;
     }
 
     /**
@@ -426,7 +424,6 @@ public class RequestMessage implements Externalizable {
 		return delaySerialization;
 	}
 	
-	//TODO: allow for the client to explicitly enable/disable this behavior
 	public void setDelaySerialization(boolean delaySerialization) {
 		this.delaySerialization = delaySerialization;
 	}
