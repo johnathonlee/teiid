@@ -469,6 +469,12 @@ public class RelationalPlanner {
             rules.push(RuleConstants.PUSH_SELECT_CRITERIA);
             rules.push(RuleConstants.PLAN_JOINS);
         }
+        
+        if(hints.hasJoin) {
+            rules.push(RuleConstants.CLEAN_CRITERIA);
+            rules.push(RuleConstants.COPY_CRITERIA);
+        }
+        
         rules.push(RuleConstants.RAISE_ACCESS);
         if (hints.hasSetQuery) {
             rules.push(RuleConstants.PLAN_UNIONS);
@@ -479,7 +485,6 @@ public class RelationalPlanner {
             rules.push(RuleConstants.CLEAN_CRITERIA);
         }
         if(hints.hasJoin) {
-            rules.push(RuleConstants.COPY_CRITERIA);
             rules.push(RuleConstants.PUSH_NON_JOIN_CRITERIA);
         }
         if(hints.hasVirtualGroups) {
