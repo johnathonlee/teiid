@@ -2696,7 +2696,7 @@ public class TestOptimizer {
     	BasicSourceCapabilities caps = getTypicalCapabilities();
     	caps.setFunctionSupport(SourceSystemFunctions.CONVERT, true);
         ProcessorPlan plan = helpPlan("select pm1.g1.e1 from pm1.g1, pm1.g2, pm1.g3 where pm1.g1.e1 = pm1.g2.e1 and pm1.g1.e1 = pm1.g3.e2 and pm1.g3.e2 = pm1.g2.e1", RealMetadataFactory.example1Cached(), //$NON-NLS-1$
-            new String[] { "SELECT g_0.e1 FROM pm1.g1 AS g_0, pm1.g2 AS g_1, pm1.g3 AS g_2 WHERE (g_0.e1 = g_1.e1) AND (g_0.e1 = convert(g_2.e2, string)) AND (convert(g_2.e2, string) = g_1.e1)" }
+            new String[] { "SELECT g_0.e1 FROM pm1.g1 AS g_0, pm1.g2 AS g_1, pm1.g3 AS g_2 WHERE (g_0.e1 = g_1.e1) AND (g_0.e1 = g_2.e2) AND (g_2.e2 = g_1.e1)" }
         , new DefaultCapabilitiesFinder(caps), ComparisonMode.EXACT_COMMAND_STRING); //$NON-NLS-1$
         checkNodeTypes(plan, FULL_PUSHDOWN);         
     }
