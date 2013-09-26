@@ -311,7 +311,7 @@ public class FrameUtil {
             return expression;
         }
         
-        if(expression instanceof SingleElementSymbol) { 
+        if(expression instanceof Expression) { 
             Expression mappedSymbol = (Expression) symbolMap.get(expression);
             if (mappedSymbol != null) {
                 return mappedSymbol;
