@@ -48,6 +48,7 @@ import org.teiid.logging.LogManager;
 import org.teiid.query.QueryPlugin;
 import org.teiid.query.metadata.TempMetadataID;
 import org.teiid.query.metadata.TempMetadataStore;
+import org.teiid.query.processor.BatchCollector;
 import org.teiid.query.processor.BatchIterator;
 import org.teiid.query.processor.QueryProcessor;
 import org.teiid.query.resolver.command.TempTableResolver;
@@ -85,11 +86,13 @@ public class TempTableStore {
     public static class TableProcessor {
 		QueryProcessor queryProcessor;
     	List<ElementSymbol> columns;
-
+    	BatchIterator iterator;
+    	
     	public TableProcessor(QueryProcessor queryProcessor,
 				List<ElementSymbol> columns) {
 			this.queryProcessor = queryProcessor;
 			this.columns = columns;
+			this.iterator = new BatchIterator(queryProcessor);			
 		}
     	
     	public QueryProcessor getQueryProcessor() {
@@ -358,7 +361,7 @@ public class TempTableStore {
 			TableProcessor withProcessor, TempTable tempTable)
 			throws TeiidComponentException, ExpressionEvaluationException,
 			TeiidProcessingException {
-		tempTable.insert(new BatchIterator(withProcessor.queryProcessor), withProcessor.columns, false);
+		tempTable.insert(new BatchCollector.BatchProducerTupleSource(withProcessor.queryProcessor), withProcessor.columns, false);
 		tempTable.setUpdatable(false);
 		processors.remove(tempTableID);
 	}
