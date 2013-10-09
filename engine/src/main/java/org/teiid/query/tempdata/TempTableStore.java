@@ -87,7 +87,7 @@ public class TempTableStore {
 		QueryProcessor queryProcessor;
     	List<ElementSymbol> columns;
     	BatchIterator iterator;
-    	
+
     	public TableProcessor(QueryProcessor queryProcessor,
 				List<ElementSymbol> columns) {
 			this.queryProcessor = queryProcessor;
@@ -361,7 +361,7 @@ public class TempTableStore {
 			TableProcessor withProcessor, TempTable tempTable)
 			throws TeiidComponentException, ExpressionEvaluationException,
 			TeiidProcessingException {
-		tempTable.insert(new BatchCollector.BatchProducerTupleSource(withProcessor.queryProcessor), withProcessor.columns, false);
+		tempTable.insert(withProcessor.iterator, withProcessor.columns, false);
 		tempTable.setUpdatable(false);
 		processors.remove(tempTableID);
 	}

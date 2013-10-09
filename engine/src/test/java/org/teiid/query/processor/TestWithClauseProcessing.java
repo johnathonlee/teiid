@@ -199,31 +199,30 @@ public class TestWithClauseProcessing {
 	    //check the full pushdown command
 	    helpProcess(plan, dataManager,  new List[0]);
 	}
-
-	
+		
 	@Test public void testWithBlockingJoin() throws TeiidException {
- 	      
- 	    String sql = "with a (x, y) as (select e1, e2 from pm1.g1) SELECT a.x, a.y, pm1.g2.e1 from a left outer join pm1.g2 makenotdep on (rtrim(a.x) = pm1.g2.e1) order by a.y"; //$NON-NLS-1$
- 	    
- 	    HardcodedDataManager dataManager = new HardcodedDataManager() {
- 	    	@Override
- 	    	public TupleSource registerRequest(CommandContext context,
+	      
+	    String sql = "with a (x, y) as (select e1, e2 from pm1.g1) SELECT a.x, a.y, pm1.g2.e1 from a left outer join pm1.g2 makenotdep on (rtrim(a.x) = pm1.g2.e1) order by a.y"; //$NON-NLS-1$
+	    
+	    HardcodedDataManager dataManager = new HardcodedDataManager() {
+	    	@Override
+	    	public TupleSource registerRequest(CommandContext context,
                     Command command,
                     String modelName,
                     String connectorBindingId, int nodeID, int limit)
- 	    			throws TeiidComponentException {
- 	    		final TupleSource ts = super.registerRequest(context, command, modelName, null, 0, 0);
- 	    		return new TupleSource() {
- 	    			int i = 0;
- 					
- 					@Override
- 					public List<?> nextTuple() throws TeiidComponentException,
- 							TeiidProcessingException {
- 						if ((i++ % 100)<3) {
- 							throw BlockedException.INSTANCE;
- 						}
- 						return ts.nextTuple();
- 					}
+	    			throws TeiidComponentException {
+	    		final TupleSource ts = super.registerRequest(context, command, modelName, null, 0, 0);
+	    		return new TupleSource() {
+	    			int i = 0;
+					
+					@Override
+					public List<?> nextTuple() throws TeiidComponentException,
+							TeiidProcessingException {
+						if ((i++ % 100)<3) {
+							throw BlockedException.INSTANCE;
+						}
+						return ts.nextTuple();
+					}
 					
 					@Override
 					public void closeSource() {
@@ -237,7 +236,7 @@ public class TestWithClauseProcessing {
 	    	rows[i] = Arrays.asList(String.valueOf(i));
 	    }
 	    dataManager.addData("SELECT g_0.e1 AS c_0 FROM pm1.g2 AS g_0 ORDER BY c_0", rows);
-	    rows = new List[100];
+	    rows = new List[2000];
 	    for (int i = 0; i < rows.length; i++) {
 	    	rows[i] = Arrays.asList(String.valueOf(i), i);
 	    }
@@ -247,12 +246,11 @@ public class TestWithClauseProcessing {
 	    ProcessorPlan plan = TestOptimizer.helpPlan(sql, RealMetadataFactory.example1Cached(), null, new DefaultCapabilitiesFinder(TestOptimizer.getTypicalCapabilities()), new String[] {"SELECT a.x, a.y FROM a", "SELECT g_0.e1 AS c_0 FROM pm1.g2 AS g_0 ORDER BY c_0"}, ComparisonMode.EXACT_COMMAND_STRING);
 	    //check the full pushdown command
 	    
-	    List<?>[] result = new List[100];
+	    List<?>[] result = new List[2000];
 	    for (int i = 0; i < result.length; i++) {
 	    	result[i] = Arrays.asList(String.valueOf(i), i, i < 10?String.valueOf(i):null);
 	    }
 	    
 	    helpProcess(plan, dataManager, result);
 	}
-
 }
