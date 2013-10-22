@@ -197,7 +197,6 @@ public class JoinNode extends SubqueryAwareRelationalNode {
     		if (!isDependent()) {
     			this.joinStrategy.openRight();
                 this.joinStrategy.loadRight();
-                this.joinStrategy.rightSource.prefetch(true);
     		}
     		throw e;
     	}
@@ -211,16 +210,6 @@ public class JoinNode extends SubqueryAwareRelationalNode {
         	this.terminateBatches();
         } catch (BatchAvailableException e) {
         	//pull the batch
-        } catch (BlockedException e) {
-        	//TODO: this leads to duplicate exceptions, we 
-        	//could track which side is blocking
-        	try {
-        		this.joinStrategy.leftSource.prefetch(true);
-        	} catch (BlockedException e1) {
-        		
-        	}
-        	this.joinStrategy.rightSource.prefetch(true);
-        	throw e;
         }
         return pullBatch();
     }

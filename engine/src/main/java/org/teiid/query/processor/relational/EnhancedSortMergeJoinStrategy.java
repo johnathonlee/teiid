@@ -40,6 +40,7 @@ import org.teiid.core.types.DataTypeManager;
 import org.teiid.logging.LogConstants;
 import org.teiid.logging.LogManager;
 import org.teiid.logging.MessageLevel;
+import org.teiid.query.optimizer.relational.rules.NewCalculateCostUtil;
 import org.teiid.query.processor.relational.SourceState.ImplicitBuffer;
 import org.teiid.query.sql.lang.JoinType;
 import org.teiid.query.sql.lang.OrderBy;
@@ -235,7 +236,9 @@ public class EnhancedSortMergeJoinStrategy extends MergeJoinStrategy {
     }
     
     private boolean shouldIndexIfSmall(SourceState source) throws TeiidComponentException, TeiidProcessingException {
-    	return source.rowCountLE(source.getSource().getBatchSize() / 2);
+    	Number cardinality = source.getSource().getEstimateNodeCardinality();
+    	return (source.hasBuffer() || (cardinality != null && cardinality.floatValue() != NewCalculateCostUtil.UNKNOWN_VALUE && cardinality.floatValue() <= source.getSource().getBatchSize() / 4)) 
+    	&& (source.getRowCount() <= source.getSource().getBatchSize() / 2);
     }
     
     @Override
@@ -304,26 +307,7 @@ public class EnhancedSortMergeJoinStrategy extends MergeJoinStrategy {
     }
     
     private boolean shouldIndex(SourceState possibleIndex, SourceState other) throws TeiidComponentException, TeiidProcessingException {
-    	long size = joinNode.getBatchSize();
-    	int indexSize = possibleIndex.hasBuffer()?possibleIndex.getRowCount():-1;
-    	int otherSize = other.hasBuffer()?other.getRowCount():-1;
-    	//determine sizes in an incremental fashion as to avoid a full buffer of the unsorted side
-    	while (size < Integer.MAX_VALUE && (indexSize == -1 || otherSize == -1)) {
-    		if (indexSize == -1 && (possibleIndex.rowCountLE((int)size) || possibleIndex.hasBuffer())) {
-    			indexSize = possibleIndex.getRowCount();
-    		}
-    		if (otherSize == -1 && (other.rowCountLE((int)size) || other.hasBuffer())) {
-    			otherSize = other.getRowCount();
-    		}
-    		if (indexSize == -1 && otherSize != -1 && size * 4 > otherSize) {
-    			return false;
-    		}
-    		if (indexSize != -1 && otherSize == -1 && indexSize * 4 <= size) {
-    			break;
-    		}
-    		size *=2;
-    	}
-		if ((size > Integer.MAX_VALUE && (indexSize == -1 || otherSize == -1)) || (indexSize != -1 && otherSize != -1 && indexSize * 4 > otherSize)) {
+    	if (possibleIndex.getRowCount() * 4 > other.getRowCount()) {
     		return false; //index is too large
     	}
     	int schemaSize = this.joinNode.getBufferManager().getSchemaSize(other.getSource().getOutputElements());
