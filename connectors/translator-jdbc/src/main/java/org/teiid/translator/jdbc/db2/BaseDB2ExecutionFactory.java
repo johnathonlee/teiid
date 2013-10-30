@@ -184,8 +184,10 @@ public class BaseDB2ExecutionFactory extends JDBCExecutionFactory {
 	@Override
 	public Object retrieveValue(ResultSet results, int columnIndex,
 			Class<?> expectedType) throws SQLException {
-		if (expectedType == TypeFacility.RUNTIME_TYPES.XML) {
+		if (expectedType == TypeFacility.RUNTIME_TYPES.XML || expectedType == TypeFacility.RUNTIME_TYPES.CLOB) {
 			return results.getString(columnIndex);
+		} else if (expectedType == TypeFacility.RUNTIME_TYPES.BLOB ){
+			return results.getBytes(columnIndex);
 		}
 		return super.retrieveValue(results, columnIndex, expectedType);
 	}
@@ -193,8 +195,10 @@ public class BaseDB2ExecutionFactory extends JDBCExecutionFactory {
 	@Override
 	public Object retrieveValue(CallableStatement results, int parameterIndex,
 			Class<?> expectedType) throws SQLException {
-		if (expectedType == TypeFacility.RUNTIME_TYPES.XML) {
+		if (expectedType == TypeFacility.RUNTIME_TYPES.XML || expectedType == TypeFacility.RUNTIME_TYPES.CLOB) {
 			return results.getString(parameterIndex);
+		} else if (expectedType == TypeFacility.RUNTIME_TYPES.BLOB){
+			return results.getBytes(parameterIndex);
 		}
 		return super.retrieveValue(results, parameterIndex, expectedType);
 	}
