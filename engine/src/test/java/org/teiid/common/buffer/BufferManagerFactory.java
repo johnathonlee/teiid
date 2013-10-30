@@ -82,6 +82,7 @@ public class BufferManagerFactory {
 	public static BufferManagerImpl initBufferManager(BufferManagerImpl bufferManager) {
 	    try {
 			bufferManager.initialize();
+			bufferManager.setUseWeakReferences(false);
 			MemoryStorageManager storageManager = new MemoryStorageManager();
 			SplittableStorageManager ssm = new SplittableStorageManager(storageManager);
 			ssm.setMaxFileSizeDirect(MemoryStorageManager.MAX_FILE_SIZE);
