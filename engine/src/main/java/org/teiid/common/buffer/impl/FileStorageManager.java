@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.teiid.common.buffer.FileStore;
 import org.teiid.common.buffer.StorageManager;
 import org.teiid.core.TeiidComponentException;
+import org.teiid.logging.LogConstants;
 import org.teiid.logging.LogManager;
 import org.teiid.logging.MessageLevel;
 import org.teiid.query.QueryPlugin;
@@ -53,6 +54,8 @@ public class FileStorageManager implements StorageManager {
 	private long maxBufferSpace = DEFAULT_MAX_BUFFERSPACE;
 	private AtomicLong usedBufferSpace = new AtomicLong();
 	private AtomicInteger fileCounter = new AtomicInteger();
+	
+	private AtomicLong sample = new AtomicLong();
 	
 	private class FileInfo {
     	private File file;
@@ -156,17 +159,18 @@ public class FileStorageManager implements StorageManager {
 				//this is a weak check, concurrent access may push us over the max.  we are just trying to prevent large overage allocations
 				long used = usedBufferSpace.get() + bytesUsed;
 				if (used > maxBufferSpace) {
-					//TODO: trigger a compaction before this is thrown
-					throw new IOException(QueryPlugin.Util.getString("FileStoreageManager.space_exhausted", maxBufferSpace)); //$NON-NLS-1$
+					throw new OutOfDiskException(QueryPlugin.Util.getString("FileStoreageManager.space_exhausted", bytesUsed, used, maxBufferSpace)); //$NON-NLS-1$
 				}
 			}
 			fileAccess.setLength(newLength);
 			long used = usedBufferSpace.addAndGet(bytesUsed);
+			if (LogManager.isMessageToBeRecorded(org.teiid.logging.LogConstants.CTX_BUFFER_MGR, MessageLevel.DETAIL) && (sample.getAndIncrement() % 100) == 0) {
+				LogManager.logDetail(LogConstants.CTX_BUFFER_MGR, "sampling bytes used:", used); //$NON-NLS-1$
+			}
 			if (bytesUsed > 0 && used > maxBufferSpace) {
 				fileAccess.setLength(currentLength);
 				usedBufferSpace.addAndGet(-bytesUsed);
-				//TODO: trigger a compaction before this is thrown
-				throw new IOException(QueryPlugin.Util.getString("FileStoreageManager.space_exhausted", maxBufferSpace)); //$NON-NLS-1$
+				throw new OutOfDiskException(QueryPlugin.Util.getString("FileStoreageManager.space_exhausted", bytesUsed, used, maxBufferSpace)); //$NON-NLS-1$
 			}
 		}
 	    

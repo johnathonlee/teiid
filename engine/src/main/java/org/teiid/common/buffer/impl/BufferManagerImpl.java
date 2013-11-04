@@ -128,6 +128,8 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 		}
 	}
 
+	private Cleaner cleaner;
+	
 	/**
 	 * This estimate is based upon adding the value to 2/3 maps and having CacheEntry/PhysicalInfo keys
 	 */
@@ -387,7 +389,8 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 	private static final Timer timer = new Timer("BufferManager Cleaner", true); //$NON-NLS-1$
 	
 	public BufferManagerImpl() {
-		timer.schedule(new Cleaner(this), 15000, 15000);
+		this.cleaner = new Cleaner(this);
+		timer.schedule(cleaner, 15000, 15000);
 	}
 	
 	void clearSoftReference(BatchSoftReference bsr) {
@@ -829,6 +832,7 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 	
 	AtomicInteger removed = new AtomicInteger();
 	
+	
 	CacheEntry remove(Long gid, Long batch, boolean prefersMemory) {
 		if (LogManager.isMessageToBeRecorded(LogConstants.CTX_BUFFER_MGR, MessageLevel.TRACE)) {
 			LogManager.logTrace(LogConstants.CTX_BUFFER_MGR, "Removing batch from BufferManager", batch); //$NON-NLS-1$
@@ -940,6 +944,12 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 	}
 
 	public void shutdown() {
+		this.cache.shutdown();
+		this.cache = null;
+		this.memoryEntries.clear();
+		this.evictionQueue.getEvictionQueue().clear();
+		//this.initialEvictionQueue.getEvictionQueue().clear();
+		this.cleaner.cancel();
 	}
 
 	@Override
