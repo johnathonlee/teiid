@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.teiid.common.buffer.BlockedException;
 import org.teiid.common.buffer.BufferManagerFactory;
 import org.teiid.common.buffer.TupleBatch;
+import org.teiid.common.buffer.TupleBuffer;
 import org.teiid.common.buffer.impl.BufferManagerImpl;
 import org.teiid.core.TeiidComponentException;
 import org.teiid.core.TeiidProcessingException;
@@ -179,7 +180,18 @@ public class TestJoinNode {
         
         List rightElements = new ArrayList();
         rightElements.add(es2);
-        rightNode = new FakeRelationalNode(2, rightTuples);
+        rightNode = new BlockingFakeRelationalNode(2, rightTuples) {
+        	@Override
+        	public boolean hasBuffer(boolean requireFinal) {
+        		return false;
+        	}
+
+        	@Override
+        	public TupleBuffer getBuffer(int maxRows) throws BlockedException, TeiidComponentException, TeiidProcessingException {
+        		fail();
+        		throw new AssertionError();
+        	};
+        };
         rightNode.setElements(rightElements);
         
         List joinElements = new ArrayList();
@@ -600,10 +612,10 @@ public class TestJoinNode {
     }
     
     @Test public void testMergeJoinOptimization() throws Exception {
-        helpTestEnhancedSortMergeJoin(99);
+        helpTestEnhancedSortMergeJoin(99, false);
     }
 
-	private void helpTestEnhancedSortMergeJoin(int batchSize)
+	private void helpTestEnhancedSortMergeJoin(int batchSize, boolean repeated)
 			throws TeiidComponentException, TeiidProcessingException {
 		this.joinType = JoinType.JOIN_INNER;
         int rows = 100;
@@ -615,26 +627,49 @@ public class TestJoinNode {
         }
         this.leftTuples = data;
         this.rightTuples = createTuples2();
-        expected = new List[] {
-           Arrays.asList(new Object[] { 4, 4 }),
-           Arrays.asList(new Object[] { 4, 4 }),
-           Arrays.asList(new Object[] { 7, 7 }),
-           Arrays.asList(new Object[] { 7, 7 }),
-           Arrays.asList(new Object[] { 2, 2 }),
-           Arrays.asList(new Object[] { 2, 2 }),
-           Arrays.asList(new Object[] { 6, 6 }),
-           Arrays.asList(new Object[] { 1, 1 }),  
-           Arrays.asList(new Object[] { 4, 4 }),
-           Arrays.asList(new Object[] { 4, 4 }),
-           Arrays.asList(new Object[] { 7, 7 }),
-           Arrays.asList(new Object[] { 7, 7 }),
-           Arrays.asList(new Object[] { 2, 2 }),
-           Arrays.asList(new Object[] { 2, 2 }),
-           Arrays.asList(new Object[] { 6, 6 }),
-           Arrays.asList(new Object[] { 1, 1 }),
-           Arrays.asList(new Object[] { 4, 4 }),
-           Arrays.asList(new Object[] { 4, 4 }),
-        };
+        if (!repeated) {
+        	expected = new List[] {
+                Arrays.asList(new Object[] { 4, 4 }),
+                Arrays.asList(new Object[] { 4, 4 }),
+                Arrays.asList(new Object[] { 7, 7 }),
+                Arrays.asList(new Object[] { 7, 7 }),
+                Arrays.asList(new Object[] { 2, 2 }),
+                Arrays.asList(new Object[] { 2, 2 }),
+                Arrays.asList(new Object[] { 6, 6 }),
+                Arrays.asList(new Object[] { 1, 1 }),  
+                Arrays.asList(new Object[] { 4, 4 }),
+                Arrays.asList(new Object[] { 4, 4 }),
+                Arrays.asList(new Object[] { 7, 7 }),
+                Arrays.asList(new Object[] { 7, 7 }),
+                Arrays.asList(new Object[] { 2, 2 }),
+                Arrays.asList(new Object[] { 2, 2 }),
+                Arrays.asList(new Object[] { 6, 6 }),
+                Arrays.asList(new Object[] { 1, 1 }),
+                Arrays.asList(new Object[] { 4, 4 }),
+                Arrays.asList(new Object[] { 4, 4 }),
+             };
+        } else {
+	        expected = new List[] {
+	           Arrays.asList(new Object[] { 4, 4 }),
+	           Arrays.asList(new Object[] { 4, 4 }),
+	           Arrays.asList(new Object[] { 1, 1 }),  
+	           Arrays.asList(new Object[] { 6, 6 }),
+	           Arrays.asList(new Object[] { 2, 2 }),
+	           Arrays.asList(new Object[] { 2, 2 }),
+	           Arrays.asList(new Object[] { 7, 7 }),
+	           Arrays.asList(new Object[] { 7, 7 }),
+	           Arrays.asList(new Object[] { 4, 4 }),
+	           Arrays.asList(new Object[] { 4, 4 }),
+	           Arrays.asList(new Object[] { 1, 1 }),
+	           Arrays.asList(new Object[] { 6, 6 }),
+	           Arrays.asList(new Object[] { 2, 2 }),
+	           Arrays.asList(new Object[] { 2, 2 }),
+	           Arrays.asList(new Object[] { 7, 7 }),
+	           Arrays.asList(new Object[] { 7, 7 }),
+	           Arrays.asList(new Object[] { 4, 4 }),
+	           Arrays.asList(new Object[] { 4, 4 }),
+	        };
+        }
         helpCreateJoin();               
         this.joinStrategy = new EnhancedSortMergeJoinStrategy(SortOption.SORT, SortOption.SORT);
         this.join.setJoinStrategy(joinStrategy);
@@ -713,7 +748,11 @@ public class TestJoinNode {
 	}
     
     @Test public void testMergeJoinOptimizationMultiBatch() throws Exception {
-    	helpTestEnhancedSortMergeJoin(10);
+    	helpTestEnhancedSortMergeJoin(10, false);
+    }
+    
+    @Test public void testMergeJoinOptimizationMultiBatch1() throws Exception {
+    	helpTestEnhancedSortMergeJoin(1, true);
     }
     
     @Test public void testMergeJoinOptimizationNoRows() throws Exception {

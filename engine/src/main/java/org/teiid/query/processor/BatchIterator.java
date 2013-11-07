@@ -146,22 +146,44 @@ public class BatchIterator extends AbstractTupleSource {
      * non-destructive method to set the mark
      * @return true if the mark was set
      */
-    public boolean ensureSave() {
-    	if (!saveOnMark || mark) {
-    		return false;
-    	}
-    	mark = true;
-    	return true;
-    }
-    
-    public void disableSave() {
-    	if (buffer != null) {
-    		this.saveOnMark = true;
-    		this.mark = false;
-    		if (batch != null && batch.getEndRow() <= this.buffer.getRowCount()) {
-    			this.batch = null;
-    		}
-    	}
-    }
-    
+	public boolean ensureSave() {
+		if (!saveOnMark || mark) {
+			return false;
+		}
+		mark = true;
+		return true;
+	}
+	
+	public void disableSave() {
+		if (buffer != null) {
+			this.saveOnMark = true;
+			this.mark = false;
+			if (batch != null && batch.getEndRow() <= this.buffer.getRowCount()) {
+				this.batch = null;
+			}
+		}
+	}
+	
+	public void readAhead(long limit) throws TeiidComponentException, TeiidProcessingException {
+		if (buffer == null || done) {
+			return;
+		}
+		if (this.buffer.getManagedRowCount() > limit) {
+			return;
+		}
+		if (this.batch != null && this.buffer.getRowCount() < this.batch.getEndRow()) {
+			//haven't saved already
+			this.buffer.addTupleBatch(this.batch, true);
+		}
+		TupleBatch tb = source.nextBatch();
+		done = tb.getTerminationFlag();
+		this.buffer.addTupleBatch(tb, true);
+		if (done) {
+			this.buffer.close();
+		}
+	}
+	
+	public TupleBuffer getBuffer() {
+		return buffer;
+	}    
 }

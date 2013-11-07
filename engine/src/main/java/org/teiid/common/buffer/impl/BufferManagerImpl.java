@@ -628,7 +628,7 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
     	lock.lock();
     	try {
 			//don't wait for more than is available
-			int waitCount = Math.min(additional, this.getMaxReserveKB() - reservedByThread.get());
+			int waitCount = Math.min(additional, this.getMaxReserveKB()<<10 - reservedByThread.get());
 			int committed = 0;
 	    	while (waitCount > 0 && waitCount > this.reserveBatchBytes.get() && committed < additional) {
 	    		long reserveBatchSample = this.reserveBatchBytes.get();
@@ -645,6 +645,8 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 		    	int result = noWaitReserve(additional - committed, false);
 		    	committed += result;
 	    	}	
+	    	int result = noWaitReserve(additional - committed, false);
+	    	committed += result;
 	    	return committed;
     	} finally {
     		lock.unlock();

@@ -632,5 +632,20 @@ public abstract class RelationalNode implements Cloneable, BatchProducer {
 		}
 		throw e;
 	}
+
+	public boolean hasBuffer(boolean b) {
+		return false;
+	}
+
+	/**
+     * return the final tuple buffer or null if not available
+     * @return
+	 * @throws TeiidProcessingException 
+	 * @throws TeiidComponentException 
+	 * @throws BlockedException 
+     */
+	public TupleBuffer getBuffer(int maxRows) throws BlockedException, TeiidComponentException, TeiidProcessingException {
+		return null;
+	}
 	
 }

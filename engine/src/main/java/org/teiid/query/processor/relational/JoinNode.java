@@ -197,6 +197,7 @@ public class JoinNode extends SubqueryAwareRelationalNode {
     		if (!isDependent()) {
     			this.joinStrategy.openRight();
                 this.joinStrategy.loadRight();
+                prefetch(this.joinStrategy.rightSource, this.joinStrategy.leftSource);
     		}
     		throw e;
     	}
@@ -210,27 +211,42 @@ public class JoinNode extends SubqueryAwareRelationalNode {
         	this.terminateBatches();
         } catch (BatchAvailableException e) {
         	//pull the batch
+        } catch (BlockedException e) {
+        	//TODO: this leads to duplicate exceptions, we 
+        	//could track which side is blocking
+        	try {
+        		prefetch(this.joinStrategy.leftSource, this.joinStrategy.rightSource);
+        	} catch (BlockedException e1) {
+        		
+        	}
+        	prefetch(this.joinStrategy.rightSource, this.joinStrategy.leftSource);
+        	throw e;
         }
         return pullBatch();
     }
 
-	/**
-	 * @see org.teiid.query.processor.relational.RelationalNode#getDescriptionProperties()
-	 * @since 4.2
-	 */
-	public PlanNode getDescriptionProperties() {
-		// Default implementation - should be overridden
-		PlanNode props = super.getDescriptionProperties();
-
-		if (isDependent()) {
-			props.addProperty(PROP_DEPENDENT, Boolean.TRUE.toString());
-		}
-		props.addProperty(PROP_JOIN_STRATEGY, this.joinStrategy.toString());
-		props.addProperty(PROP_JOIN_TYPE, this.joinType.toString());
-		List<String> critList = getCriteriaList();
-		props.addProperty(PROP_JOIN_CRITERIA, critList);
-		return props;
+	private void prefetch(SourceState toFetch, SourceState other) throws TeiidComponentException,
+			TeiidProcessingException {
+		toFetch.prefetch(Math.max(1l, other.getIncrementalRowCount(false)/other.getSource().getBatchSize())*toFetch.getSource().getBatchSize());
 	}
+
+    /** 
+     * @see org.teiid.query.processor.relational.RelationalNode#getDescriptionProperties()
+     * @since 4.2
+     */
+    public PlanNode getDescriptionProperties() {
+        // Default implementation - should be overridden     
+    	PlanNode props = super.getDescriptionProperties();
+        
+        if(isDependent()) {
+        	props.addProperty(PROP_DEPENDENT, Boolean.TRUE.toString());
+        }
+        props.addProperty(PROP_JOIN_STRATEGY, this.joinStrategy.toString());
+        props.addProperty(PROP_JOIN_TYPE, this.joinType.toString());
+        List<String> critList = getCriteriaList();
+        props.addProperty(PROP_JOIN_CRITERIA, critList);
+        return props;
+    }
 
 	private List<String> getCriteriaList() {
 		List<String> critList = new ArrayList<String>();
