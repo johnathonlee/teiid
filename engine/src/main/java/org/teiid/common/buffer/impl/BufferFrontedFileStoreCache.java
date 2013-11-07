@@ -59,6 +59,7 @@ import org.teiid.common.buffer.StorageManager;
 import org.teiid.core.TeiidComponentException;
 import org.teiid.core.TeiidRuntimeException;
 import org.teiid.core.util.ExecutorUtils;
+import org.teiid.core.util.PropertiesUtils;
 import org.teiid.logging.LogConstants;
 import org.teiid.logging.LogManager;
 import org.teiid.logging.MessageLevel;
@@ -377,7 +378,9 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 	private AtomicBoolean defragRunning = new AtomicBoolean();
 	private AtomicInteger freedCounter = new AtomicInteger();
 	
-	private int truncateInterval = 10;
+	private boolean compactBufferFiles = PropertiesUtils.getBooleanProperty(System.getProperties(), "org.teiid.compactBufferFiles", false); //$NON-NLS-1$
+	
+	private int truncateInterval = 4;
 	//defrag to release freespace held by storage files
 	final class DefragTask implements Runnable {
 		private AtomicInteger runs = new AtomicInteger();
@@ -398,6 +401,7 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 		}
 		
 		private long truncate(boolean anySpace) {
+			anySpace |= compactBufferFiles;
 			long freed = 0;
 			for (int i = 0; i < sizeBasedStores.length; i++) {
 				BlockStore blockStore = sizeBasedStores[i];
@@ -412,6 +416,7 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 		}
 
 		private void defrag(boolean all) {
+			all |= compactBufferFiles;
 			if (LogManager.isMessageToBeRecorded(LogConstants.CTX_BUFFER_MGR, MessageLevel.DETAIL)) {
 				LogManager.logDetail(LogConstants.CTX_BUFFER_MGR, "Running defrag"); //$NON-NLS-1$ 
 			}
@@ -585,6 +590,7 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 			}
 		} while ((size>>1) < maxStorageObjectSize);
 		this.sizeBasedStores = stores.toArray(new BlockStore[stores.size()]);
+		this.truncateInterval = compactBufferFiles?1:8;
 	}
 	
 	boolean lowBlocks(boolean critical) {
@@ -666,7 +672,7 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
             	}
 			}
 		} catch (Throwable e) {
-			if ((e == BlockOutputStream.exceededMax && newEntry) || e == PhysicalInfo.sizeChanged) {
+			if (e == PhysicalInfo.sizeChanged) {
 				//entries are mutable after adding, the original should be removed shortly so just ignore
 				LogManager.logDetail(LogConstants.CTX_BUFFER_MGR, "Object "+ entry.getId() +" changed size since first persistence, keeping the original."); //$NON-NLS-1$ //$NON-NLS-2$
 			} else if (e == BlockOutputStream.exceededMax){
@@ -1018,7 +1024,7 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 							LogManager.logDetail(LogConstants.CTX_BUFFER_MGR, "Freed storage data block", info.block, "of size", blockStore.blockSize); //$NON-NLS-1$ //$NON-NLS-2$
 						}
 						if (!defragRunning.get() 
-								&& (freedCounter.getAndIncrement()&Short.MAX_VALUE)==Short.MAX_VALUE //should be several gigabytes of turn over
+								&& (freedCounter.getAndIncrement()&0x3fff)==0x3fff //should be several hundred megs of turn over
 								&& defragRunning.compareAndSet(false, true)) {
 							this.asynchPool.execute(defragTask);
 						}
@@ -1194,6 +1200,10 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 	@Override
 	public void shutdown() {
 		this.asynchPool.shutdownNow();
+	}
+	
+	public void setCompactBufferFiles(boolean compactBufferFiles) {
+		this.compactBufferFiles = compactBufferFiles;
 	}
 	
 }
