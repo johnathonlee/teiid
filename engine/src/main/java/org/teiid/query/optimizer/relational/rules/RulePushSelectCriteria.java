@@ -40,11 +40,13 @@ import org.teiid.query.optimizer.capabilities.CapabilitiesFinder;
 import org.teiid.query.optimizer.relational.OptimizerRule;
 import org.teiid.query.optimizer.relational.RuleStack;
 import org.teiid.query.optimizer.relational.plantree.NodeConstants;
+import org.teiid.query.optimizer.relational.plantree.NodeConstants.Info;
 import org.teiid.query.optimizer.relational.plantree.NodeEditor;
 import org.teiid.query.optimizer.relational.plantree.NodeFactory;
 import org.teiid.query.optimizer.relational.plantree.PlanNode;
-import org.teiid.query.optimizer.relational.plantree.NodeConstants.Info;
 import org.teiid.query.resolver.util.AccessPattern;
+import org.teiid.query.sql.LanguageObject;
+import org.teiid.query.sql.lang.CompareCriteria;
 import org.teiid.query.sql.lang.CompoundCriteria;
 import org.teiid.query.sql.lang.Criteria;
 import org.teiid.query.sql.lang.JoinType;
@@ -333,6 +335,29 @@ public final class RulePushSelectCriteria implements OptimizerRule {
                     if (critNode.hasBooleanProperty(NodeConstants.Info.IS_DEPENDENT_SET) 
                     		&& NodeEditor.findNodePreOrder(currentNode.getFirstChild(), NodeConstants.Types.GROUP, NodeConstants.Types.SOURCE) == null) {
                         markDependent(critNode, currentNode);
+                        
+                        //if the source does not support array comparison and we have a dependent join, then we need to check
+                        //if the transitive condition is needed.
+                        Collection<ElementSymbol> elements = ElementCollectorVisitor.getElements((LanguageObject)critNode.getProperty(Info.SELECT_CRITERIA), true);
+                        for (PlanNode joinNode : NodeEditor.findAllNodes(currentNode, NodeConstants.Types.JOIN, NodeConstants.Types.SOURCE)) {
+                        	List<Criteria> joinCriteria = (List<Criteria>) joinNode.getProperty(Info.JOIN_CRITERIA);
+                            if (joinCriteria == null) {
+                            	continue;
+                            }
+                            for (Criteria crit : joinCriteria) {
+                            	if (!(crit instanceof CompareCriteria)) {
+                            		continue;
+                            	}
+                        		CompareCriteria cc = (CompareCriteria)crit;
+                        		if (!cc.isOptional()) {
+                        			continue;
+                        		}
+                        		if (!Collections.disjoint(elements, ElementCollectorVisitor.getElements(cc, false))) {
+                        			cc.setOptional(false);
+                        		}
+                            }
+                        }
+                        
                         return currentNode.getFirstChild();
                     } 
 				} catch(QueryMetadataException e) {
