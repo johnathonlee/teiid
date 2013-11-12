@@ -69,7 +69,7 @@ public class BatchIterator extends AbstractTupleSource {
 			}
 			batch = source.nextBatch();
 			done = batch.getTerminationFlag();
-			if (buffer != null && (!saveOnMark || mark)) {
+			if (buffer != null && (!saveOnMark || mark) && !buffer.isForwardOnly()) {
             	buffer.addTupleBatch(batch, true);
             }
 			if (done && buffer != null) {
@@ -168,10 +168,10 @@ public class BatchIterator extends AbstractTupleSource {
 		if (buffer == null || done) {
 			return;
 		}
-		if (this.buffer.getManagedRowCount() > limit) {
+		if (this.buffer.getManagedRowCount() >= limit) {
 			return;
 		}
-		if (this.batch != null && this.buffer.getRowCount() < this.batch.getEndRow()) {
+		if (this.batch != null && this.buffer.getRowCount() < this.batch.getEndRow() && !this.buffer.isForwardOnly()) {
 			//haven't saved already
 			this.buffer.addTupleBatch(this.batch, true);
 		}
