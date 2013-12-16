@@ -189,8 +189,8 @@ class SourceState {
     			((BatchIterator)this.iterator).readAhead(limit);
     			return;
     		}
-    		if (source.hasBuffer(true)) {
-    			this.buffer = source.getBuffer(-1);
+    		if (source.hasFinalBuffer()) {
+    			this.buffer = source.getFinalBuffer();
     			return;
     		}
 	    	if (collector == null) {
@@ -228,8 +228,8 @@ class SourceState {
         	if (this.iterator instanceof BatchIterator) {
         		throw new AssertionError("cannot buffer the source"); //$NON-NLS-1$
         	}
-    		if (source.hasBuffer(true)) {
-    			this.buffer = source.getBuffer(-1);
+    		if (source.hasFinalBuffer()) {
+    			this.buffer = source.getFinalBuffer();
     			Assertion.assertTrue(this.buffer.isFinal());
     			return this.buffer;
     		}
@@ -255,8 +255,8 @@ class SourceState {
     	}
     	if (this.sortUtility == null) {
     		TupleSource ts = null;
-    		if (source.hasBuffer(true)) {
-    			this.buffer = source.getBuffer(-1);
+    		if (source.hasFinalBuffer()) {
+    			this.buffer = source.getFinalBuffer();
     		} else if (this.buffer == null && this.collector != null) {
     			this.buffer = this.collector.collectTuples();
     		}
@@ -288,7 +288,7 @@ class SourceState {
     }
     
     public boolean hasBuffer() {
-    	return this.buffer != null || this.source.hasBuffer(true);
+    	return this.buffer != null || this.source.hasFinalBuffer();
     }
     
     public boolean nextBuffer() {

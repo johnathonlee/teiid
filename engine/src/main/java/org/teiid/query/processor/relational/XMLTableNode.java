@@ -342,7 +342,7 @@ public class XMLTableNode extends SubqueryAwareRelationalNode implements RowProc
 	
 	@Override
 	public boolean hasFinalBuffer() {
-		return this.table.getXQueryExpression().isStreaming();
+		return false;
 	}
 	
 	@Override

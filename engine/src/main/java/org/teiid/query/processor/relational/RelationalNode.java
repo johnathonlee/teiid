@@ -42,9 +42,8 @@ import org.teiid.core.util.Assertion;
 import org.teiid.logging.LogManager;
 import org.teiid.logging.MessageLevel;
 import org.teiid.query.analysis.AnalysisRecord;
-import org.teiid.query.processor.ProcessorDataManager;
-import org.teiid.query.processor.QueryProcessor;
 import org.teiid.query.processor.BatchCollector.BatchProducer;
+import org.teiid.query.processor.ProcessorDataManager;
 import org.teiid.query.sql.symbol.AliasSymbol;
 import org.teiid.query.sql.symbol.Expression;
 import org.teiid.query.sql.symbol.SingleElementSymbol;
@@ -633,19 +632,4 @@ public abstract class RelationalNode implements Cloneable, BatchProducer {
 		throw e;
 	}
 
-	public boolean hasBuffer(boolean b) {
-		return false;
-	}
-
-	/**
-     * return the final tuple buffer or null if not available
-     * @return
-	 * @throws TeiidProcessingException 
-	 * @throws TeiidComponentException 
-	 * @throws BlockedException 
-     */
-	public TupleBuffer getBuffer(int maxRows) throws BlockedException, TeiidComponentException, TeiidProcessingException {
-		return null;
-	}
-	
 }
