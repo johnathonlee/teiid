@@ -42,8 +42,8 @@ import org.teiid.api.exception.query.QueryResolverException;
 import org.teiid.cache.CacheConfiguration;
 import org.teiid.cache.DefaultCacheFactory;
 import org.teiid.client.RequestMessage;
-import org.teiid.client.ResultsMessage;
 import org.teiid.client.RequestMessage.StatementType;
+import org.teiid.client.ResultsMessage;
 import org.teiid.client.lob.LobChunk;
 import org.teiid.client.util.ResultsFuture;
 import org.teiid.common.buffer.BufferManager;
@@ -345,6 +345,8 @@ public class TestDQPCore {
         		break;
         	}
         }
+        
+        assertTrue(this.core.bufferFullPlans.isEmpty());
     
 	    //insensitive should not block
 	    reqMsg.setCursorType(ResultSet.TYPE_SCROLL_INSENSITIVE);

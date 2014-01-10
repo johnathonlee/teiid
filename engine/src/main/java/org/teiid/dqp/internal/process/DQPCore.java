@@ -70,15 +70,15 @@ import org.teiid.dqp.message.AtomicRequestMessage;
 import org.teiid.dqp.message.RequestID;
 import org.teiid.dqp.service.BufferService;
 import org.teiid.dqp.service.TransactionContext;
-import org.teiid.dqp.service.TransactionService;
 import org.teiid.dqp.service.TransactionContext.Scope;
+import org.teiid.dqp.service.TransactionService;
 import org.teiid.events.EventDistributor;
 import org.teiid.jdbc.EnhancedTimer;
 import org.teiid.logging.CommandLogMessage;
+import org.teiid.logging.CommandLogMessage.Event;
 import org.teiid.logging.LogConstants;
 import org.teiid.logging.LogManager;
 import org.teiid.logging.MessageLevel;
-import org.teiid.logging.CommandLogMessage.Event;
 import org.teiid.metadata.MetadataRepository;
 import org.teiid.query.QueryPlugin;
 import org.teiid.query.processor.QueryProcessor;
@@ -206,7 +206,7 @@ public class DQPCore implements DQP {
     private int currentlyActivePlans;
     private int userRequestSourceConcurrency;
     private LinkedList<RequestWorkItem> waitingPlans = new LinkedList<RequestWorkItem>();
-    private LinkedHashSet<RequestWorkItem> bufferFullPlans = new LinkedHashSet<RequestWorkItem>();
+    LinkedHashSet<RequestWorkItem> bufferFullPlans = new LinkedHashSet<RequestWorkItem>();
     private CacheFactory cacheFactory;
 
 	private AuthorizationValidator authorizationValidator;
@@ -424,7 +424,7 @@ public class DQPCore implements DQP {
         	}
         	workItem.active = false;
     		currentlyActivePlans--;
-    		bufferFullPlans.remove(workItem.requestID);
+    		bufferFullPlans.remove(workItem);
 			if (!waitingPlans.isEmpty()) {
 				startActivePlan(waitingPlans.remove(), true);
 			}
