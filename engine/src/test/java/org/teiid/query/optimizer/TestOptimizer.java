@@ -3279,7 +3279,7 @@ public class TestOptimizer {
     
         ProcessorPlan plan = helpPlan(sql, metadata,  
             null, capFinder,
-            new String[] { "SELECT pm1.g1.e1 FROM pm1.g1 ORDER BY pm1.g1.e1", "SELECT pm1.g2.e1 FROM pm1.g2 ORDER BY pm1.g2.e1"}, SHOULD_SUCCEED); //$NON-NLS-1$  //$NON-NLS-2$ 
+            new String[] { "SELECT g_0.e1 FROM pm1.g1 AS g_0 ORDER BY g_0.e1", "SELECT g_0.e1 FROM pm1.g2 AS g_0"}, SHOULD_SUCCEED); //$NON-NLS-1$  //$NON-NLS-2$ 
         checkNodeTypes(plan, new int[] {
             2,      // Access
             0,      // DependentAccess
