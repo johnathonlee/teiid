@@ -242,6 +242,47 @@ The following components have been updated:
 </h2>
 <h4>From ${project.version}</h4>
 <ul>
+<li>[<a href='https://bugzilla.redhat.com/show_bug.cgi?id=1029532'>BZ1029532</a>] -  determine if transitive condition is needed
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-1560'>TEIID-1560</a>] - (partial)  modified instanceof check in FrameUtil
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-1956'>TEIID-1956</a>] - WHERE clause throws org.teiid.jdbc.TeiidSQLException: Index: 2, Size: 1 (missed 2nd commit)
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2138'>TEIID-2138</a>] - adding an emulation option to match criteria & changing the pg standard_conforming_strings default
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2363'>TEIID-2363</a>] - (modified) backout of prefetch logic introducing Assertion error
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2422'>TEIID-2422</a>] - Offer support for a timestampdiff based upon calendar fields
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2482'>TEIID-2482</a>] - Backport: Allow the use of the enhanced join for left outer joins
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2626'>TEIID-2626</a>] - If a column type is not set, null values will be written into persisted batches
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2669'>TEIID-2669</a>] - In subquery with no values returns wrong result
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2688'>TEIID-2688</a>] - NPE determining dependent join cost
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2690'>TEIID-2690</a>] - Tuples lost in a with clause item
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2701'>TEIID-2701</a>] - Do not proactively close source executions under a transaction scope higher than request
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2704'>TEIID-2704</a>] - DB2 sql/xml values must be read inline
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2707'>TEIID-2707</a>] - proactive buffering on an enhanced sort merge left outer join results in an assertionerror [1]
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2721'>TEIID-2721</a>] - Resolving an aliased view prevents inherent update from working
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2732'>TEIID-2732</a>] - (adapted backport) Improve repeated string serialization performance 
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2745'>TEIID-2745</a>] - Evaluatable subquery in ON clause produces invalid query
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2747'>TEIID-2747</a>] - Wrong results with merge join SORT_DISTINCT with a full sort that is distinct beyond the join columns
+</li>
+<li>[<a href='https://issues.jboss.org/browse/TEIID-2797'>TEIID-2797</a>] - buffer full requests is not cleaned up properly
+</ul>
+
+<h4>From 7.7.8</h4>
+<ul>
 <li>[<a href='https://issues.jboss.org/browse/TEIID-2475'>TEIID-2475</a>] -  The RelationalNode.collectNodeStats is only subtracting out the last node
 </li>
 <li>[<a href='https://issues.jboss.org/browse/TEIID-2500'>TEIID-2500</a>] -  Rewrite of case with true condition is not correct
