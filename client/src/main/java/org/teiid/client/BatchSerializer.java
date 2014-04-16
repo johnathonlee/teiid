@@ -592,7 +592,7 @@ public class BatchSerializer {
 	                            break objectSearch;
 	                        }
 	                    }
-	                    throw new TeiidRuntimeException(JDBCPlugin.Util.getString("BatchSerializer.datatype_mismatch", new Object[] {types[i], new Integer(i), objectClass})); //$NON-NLS-1$
+	                    throw new TeiidRuntimeException(e, JDBCPlugin.Util.getString("BatchSerializer.datatype_mismatch", new Object[] {types[i], new Integer(i), objectClass})); //$NON-NLS-1$
 	                }
 	            }
             }

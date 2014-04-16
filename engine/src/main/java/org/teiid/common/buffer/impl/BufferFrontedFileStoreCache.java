@@ -676,9 +676,9 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 				//entries are mutable after adding, the original should be removed shortly so just ignore
 				LogManager.logDetail(LogConstants.CTX_BUFFER_MGR, "Object "+ entry.getId() +" changed size since first persistence, keeping the original."); //$NON-NLS-1$ //$NON-NLS-2$
 			} else if (e == BlockOutputStream.exceededMax){
-				LogManager.logError(LogConstants.CTX_BUFFER_MGR, "Max block number exceeded.  Increase the maxStorageObjectSize to support larger storage objects.  Alternatively you could make the processor batch size smaller."); //$NON-NLS-1$
+				LogManager.logError(LogConstants.CTX_BUFFER_MGR, "Max block number exceeded " + s.getId() + " " + entry.getId() + " Increase the maxStorageObjectSize to support larger storage objects.  Alternatively you could make the processor batch size smaller."); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			} else {
-				LogManager.logError(LogConstants.CTX_BUFFER_MGR, e, "Error persisting, attempts to read "+ entry.getId() +" later will result in an exception."); //$NON-NLS-1$ //$NON-NLS-2$
+				LogManager.logError(LogConstants.CTX_BUFFER_MGR, e, "Error persisting, attempts to read " + s.getId() + " " + entry.getId() +" later will result in an exception."); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			}
 		} finally {
 			if (hasPermit) {
@@ -789,9 +789,9 @@ public class BufferFrontedFileStoreCache implements Cache<PhysicalInfo>, Storage
 			CacheEntry ce = new CacheEntry(new CacheKey(oid, 1, 1), sizeEstimate, serializer.deserialize(dis), ref, true);
 			return ce;
         } catch(IOException e) {
-        	throw new TeiidComponentException(e, QueryPlugin.Util.getString("FileStoreageManager.error_reading", oid)); //$NON-NLS-1$
+        	throw new TeiidComponentException(e, QueryPlugin.Util.getString("FileStoreageManager.error_reading", info.gid, oid)); //$NON-NLS-1$
         } catch (ClassNotFoundException e) {
-        	throw new TeiidComponentException(e, QueryPlugin.Util.getString("FileStoreageManager.error_reading", oid)); //$NON-NLS-1$
+        	throw new TeiidComponentException(e, QueryPlugin.Util.getString("FileStoreageManager.error_reading", info.gid, oid)); //$NON-NLS-1$
         } catch (InterruptedException e) {
         	throw new TeiidRuntimeException(e);
 		} finally {

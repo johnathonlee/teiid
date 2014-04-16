@@ -48,6 +48,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.teiid.client.BatchSerializer;
 import org.teiid.client.ResizingArrayList;
+import org.teiid.client.util.ExceptionUtil;
 import org.teiid.common.buffer.*;
 import org.teiid.common.buffer.AutoCleanupUtil.Removable;
 import org.teiid.common.buffer.LobManager.ReferenceMode;
@@ -205,7 +206,7 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 			CacheKey key = new CacheKey(oid, (int)readAttempts.get(), old!=null?old.getKey().getOrderingValue():0);
 			CacheEntry ce = new CacheEntry(key, sizeEstimate, batch, this.ref, false);
 			if (LogManager.isMessageToBeRecorded(LogConstants.CTX_BUFFER_MGR, MessageLevel.TRACE)) {
-				LogManager.logTrace(LogConstants.CTX_BUFFER_MGR, "Add batch to BufferManager", ce.getId(), "with size estimate", ce.getSizeEstimate()); //$NON-NLS-1$ //$NON-NLS-2$
+				LogManager.logTrace(LogConstants.CTX_BUFFER_MGR, "Add batch to BufferManager", this.id, ce.getId(), "with size estimate", ce.getSizeEstimate()); //$NON-NLS-1$ //$NON-NLS-2$
 			}
 			maxReserveBytes.addAndGet(-BATCH_OVERHEAD);
 			reserveBatchBytes.addAndGet(-BATCH_OVERHEAD);
@@ -236,7 +237,6 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 		@Override
 		public void serialize(List<? extends List<?>> obj,
 				ObjectOutput oos) throws IOException {
-			int expectedModCount = 0;
 			ResizingArrayList<?> list = null;
 			if (obj instanceof ResizingArrayList<?>) {
 				list = (ResizingArrayList<?>)obj;
@@ -245,11 +245,15 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 				//it's expected that the containing structure has updated the lob manager
 				BatchSerializer.writeBatch(oos, types, obj);
 			} catch (RuntimeException e) {
-				//there is a chance of a concurrent persist while modifying 
-				//in which case we want to swallow this exception
-				if (list == null || list.getModCount() == expectedModCount) {
+				if (ExceptionUtil.getExceptionOfType(e, ClassCastException.class) != null) {
 					throw e;
 				}
+				//there is a chance of a concurrent persist while modifying 
+				//in which case we want to swallow this exception
+				if (list == null) {
+					throw e;
+				}
+				LogManager.logDetail(LogConstants.CTX_BUFFER_MGR, e, "Possible Concurrent Modification", id); //$NON-NLS-1$
 			}
 		}
 		
@@ -756,7 +760,7 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 		if (persist) {
 			long count = writeCount.incrementAndGet();
 			if (LogManager.isMessageToBeRecorded(LogConstants.CTX_BUFFER_MGR, MessageLevel.DETAIL)) {
-				LogManager.logDetail(LogConstants.CTX_BUFFER_MGR, ce.getId(), "writing batch to storage, total writes: ", count); //$NON-NLS-1$
+				LogManager.logDetail(LogConstants.CTX_BUFFER_MGR, s.getId(), ce.getId(), "writing batch to storage, total writes: ", count); //$NON-NLS-1$
 			}
 		}
 		boolean result = cache.add(ce, s);
@@ -837,7 +841,7 @@ public class BufferManagerImpl implements BufferManager, StorageManager {
 	
 	CacheEntry remove(Long gid, Long batch, boolean prefersMemory) {
 		if (LogManager.isMessageToBeRecorded(LogConstants.CTX_BUFFER_MGR, MessageLevel.TRACE)) {
-			LogManager.logTrace(LogConstants.CTX_BUFFER_MGR, "Removing batch from BufferManager", batch); //$NON-NLS-1$
+			LogManager.logTrace(LogConstants.CTX_BUFFER_MGR, "Removing batch from BufferManager", gid, batch); //$NON-NLS-1$
 		}
 		cleanSoftReferences();
 		CacheEntry ce = fastGet(batch, prefersMemory, false);
