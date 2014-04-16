@@ -970,5 +970,12 @@ public class TestOracleTranslator {
  	             
  	TranslationHelper.helpTestVisitor(TranslationHelper.BQT_VDB, null, input, output, TRANSLATOR);
     }
+    
+    @Test public void testVersionedCapabilities() throws Exception {
+     	OracleExecutionFactory oef = new OracleExecutionFactory();
+     	oef.setDatabaseVersion("10.0");
+     	oef.start();
+     	assertTrue(oef.supportsCommonTableExpressions());
+    }
 
 }

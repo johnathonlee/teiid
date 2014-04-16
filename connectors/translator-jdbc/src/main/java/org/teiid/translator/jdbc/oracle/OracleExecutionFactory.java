@@ -60,13 +60,14 @@ import org.teiid.translator.jdbc.JDBCPlugin;
 import org.teiid.translator.jdbc.LocateFunctionModifier;
 import org.teiid.translator.jdbc.SQLConversionVisitor;
 import org.teiid.translator.jdbc.TranslatedCommand;
+import org.teiid.translator.jdbc.Version;
 
 
 @Translator(name="oracle", description="A translator for Oracle 9i Database or later")
 public class OracleExecutionFactory extends JDBCExecutionFactory {
 	
-	public static final String NINE_0 = "9.0"; //$NON-NLS-1$
-	public static final String NINE_2 = "9.2"; //$NON-NLS-1$
+ 	public static final Version NINE_0 = Version.getVersion("9.0"); //$NON-NLS-1$
+ 	public static final Version NINE_2 = Version.getVersion("9.2"); //$NON-NLS-1$
 	
 	private static final String TIME_FORMAT = "HH24:MI:SS"; //$NON-NLS-1$
 	private static final String DATE_FORMAT = "YYYY-MM-DD"; //$NON-NLS-1$
@@ -761,7 +762,7 @@ public class OracleExecutionFactory extends JDBCExecutionFactory {
     
     @Override
     public boolean supportsCommonTableExpressions() {
-    	return getDatabaseVersion().compareTo(NINE_2) >= 0;
+    	return getVersion().compareTo(NINE_2) >= 0;
     }
     
 }
