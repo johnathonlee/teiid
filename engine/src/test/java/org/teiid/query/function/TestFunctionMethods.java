@@ -74,6 +74,12 @@ public class TestFunctionMethods {
  				new Timestamp(TimestampUtil.createDate(404, 3, 13).getTime()), true));
  	}
  	
+ 	@Test public void testTimestampDiffSecond() throws Exception {
+ 		assertEquals(Long.valueOf(30), FunctionMethods.timestampDiff(NonReserved.SQL_TSI_SECOND, 
+ 				new Timestamp(TimestampUtil.createTimestamp(112, 0, 1,0,0,0,0).getTime()),
+ 				new Timestamp(TimestampUtil.createTimestamp(112, 0, 1,0,0,30,0).getTime()), true));
+ 	} 	
+ 	
  	@Test public void testTimestampDiffCalendarBasedHour1() throws Exception {
  		TimestampWithTimezone.resetCalendar(TimeZone.getTimeZone("America/New York"));
  		try {
