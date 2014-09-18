@@ -23,15 +23,17 @@
 package org.teiid.metadata;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 public class ColumnSet<T extends AbstractMetadataRecord> extends AbstractMetadataRecord {
 	
-	private static final long serialVersionUID = -1185104601468519829L;
+    private static final long serialVersionUID = -1185104601468519829L;
 
-	private List<Column> columns;
+    private boolean modifiable = true;
+    private List<Column> columns;
     private T parent;
     private transient Map<String, Column> columnMap;
     
@@ -71,9 +73,19 @@ public class ColumnSet<T extends AbstractMetadataRecord> extends AbstractMetadat
     }
 
     public void setColumns(List<Column> columns) {
-		this.columns = columns;
-		columnMap = null;
-	}
+    	    if (!(modifiable)){
+    	    	 throw new AssertionError("columns have been validated and are not modifiable");
+            }
+    	    this.columns = columns;
+	    columnMap = null;
+    }
+    
+    public void setModifiable(boolean mf){
+      if (!(mf)){
+    	    setColumns(Collections.unmodifiableList(getColumns()));
+    	    modifiable = mf;
+      }
+    }
     
     @Override
     public T getParent() {

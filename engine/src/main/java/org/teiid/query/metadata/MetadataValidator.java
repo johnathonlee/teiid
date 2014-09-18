@@ -24,6 +24,7 @@ package org.teiid.query.metadata;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -124,6 +125,9 @@ public class MetadataValidator {
 					Set<String> names = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 					validateConstraintNames(metadataValidator, report, model, t.getAllKeys(), names);
 					validateConstraintNames(metadataValidator, report, model, t.getFunctionBasedIndexes(), names);
+					if (t.getColumns() != null) {
+						t.setModifiable(false);
+					}
 				}
 				
 				// procedure validation is handled in parsing routines.
