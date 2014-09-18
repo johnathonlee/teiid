@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.lang.StringBuffer;
 import java.util.*;
 
 import javax.script.ScriptContext;
@@ -47,6 +48,8 @@ import org.teiid.core.util.ArgCheck;
 import org.teiid.core.util.LRUCache;
 import org.teiid.core.util.ObjectConverterUtil;
 import org.teiid.core.util.StringUtil;
+import org.teiid.logging.LogConstants;
+import org.teiid.logging.LogManager;
 import org.teiid.metadata.*;
 import org.teiid.metadata.BaseColumn.NullType;
 import org.teiid.metadata.Column.SearchType;
@@ -276,8 +279,12 @@ public class TransformationMetadata extends BasicQueryMetadata implements Serial
     public List<Column> getElementIDsInGroupID(final Object groupID) throws TeiidComponentException, QueryMetadataException {
     	List<Column> columns = ((Table)groupID).getColumns();
     	if (columns == null || columns.isEmpty()) {
+    		StringBuffer sb = new StringBuffer("TransformationMetadata DIAGNOSTICS\n");
+    		sb.append("Table: " + ((Table)groupID).getFullName() + " uuid: " + ((Table)groupID).getUUID() + " identityHashCode: " + System.identityHashCode(groupID) + "\n");
+		LogManager.logWarning(LogConstants.CTX_RUNTIME, sb.toString());
     		throw new QueryMetadataException(QueryPlugin.Util.gs(QueryPlugin.Event.TEIID31071, ((Table)groupID).getName()));
     	}
+
     	return columns;
     }
 

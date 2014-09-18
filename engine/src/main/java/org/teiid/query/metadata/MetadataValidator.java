@@ -21,7 +21,9 @@
  */
 package org.teiid.query.metadata;
 
+import java.lang.StringBuffer;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +95,7 @@ public class MetadataValidator {
 	static class MinimalMetadata implements MetadataRule {
 		@Override
 		public void execute(VDBMetaData vdb, MetadataStore store, ValidatorReport report, MetadataValidator metadataValidator) {
+			LogManager.logWarning(LogConstants.CTX_RUNTIME, "MinimalMetadata.excute for: " + vdb.getName());
 			for (Schema schema:store.getSchemaList()) {
 				if (vdb.getImportedModels().contains(schema.getName())) {
 					continue;
@@ -108,7 +111,13 @@ public class MetadataValidator {
 				for (Table t:schema.getTables().values()) {
 					if (t.getColumns() == null || t.getColumns().size() == 0) {
 						metadataValidator.log(report, model, QueryPlugin.Util.gs(QueryPlugin.Event.TEIID31071, t.getFullName()));
-					}					
+					}	
+					if (t.getColumns() != null) {
+						StringBuffer sb = new StringBuffer("MetadataValidator - DIAGNOSTICS\n");
+						sb.append("Table: " + t.getFullName() + " uuid: " + t.getUUID() + " identityHashCode: " + System.identityHashCode(t) + "\n");
+						LogManager.logWarning(LogConstants.CTX_RUNTIME, sb.toString());
+						t.setModifiable(false);
+					}
 				}
 				
 				// procedure validation is handled in parsing routines.
