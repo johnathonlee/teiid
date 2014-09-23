@@ -35,6 +35,8 @@ import org.teiid.core.TeiidException;
 import org.teiid.core.TeiidRuntimeException;
 import org.teiid.core.index.IEntryResult;
 import org.teiid.internal.core.index.Index;
+import org.teiid.logging.LogConstants;
+import org.teiid.logging.LogManager;
 import org.teiid.metadata.*;
 import org.teiid.metadata.FunctionMethod.Determinism;
 import org.teiid.metadata.FunctionMethod.PushDown;
@@ -349,6 +351,21 @@ public class IndexMetadataRepository extends MetadataRepository {
 	        if (tableRecord.isMaterialized()) {
 	        	tableRecord.setMaterializedStageTable((Table)getByType(MetadataConstants.RECORD_TYPE.TABLE).get(tableRecord.getMaterializedStageTable().getUUID()));
 	        	tableRecord.setMaterializedTable((Table)getByType(MetadataConstants.RECORD_TYPE.TABLE).get(tableRecord.getMaterializedTable().getUUID()));
+	        	StringBuffer sb = new StringBuffer("IndexMetadataRepository.getTables() DIAGNOSTICS\n");
+	        	if (tableRecord.getFullName() != null){
+	        		 sb.append("table record: " + tableRecord.getFullName());
+	        	}
+	        	if (tableRecord.getUUID() != null){
+	        		sb.append(" uuid: " + tableRecord.getUUID());
+	        	}
+	        	sb.append(" identityHashCode: " + System.identityHashCode(tableRecord));
+	        	if (tableRecord.getMaterializedTable() != null){
+	        		sb.append(" matTable: " + tableRecord.getMaterializedTable().getFullName() + " identityHash: " + System.identityHashCode(tableRecord.getMaterializedTable()));
+	        	} else {
+	        		sb.append(" tableRecord.getMaterializedTable() was NULL");
+	        	}
+	        	LogManager.logWarning(LogConstants.CTX_RUNTIME, sb.toString());
+           
 	        }
 			model.addTable(tableRecord);
 		}

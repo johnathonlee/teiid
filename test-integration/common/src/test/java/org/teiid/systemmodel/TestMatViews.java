@@ -255,7 +255,8 @@ public class TestMatViews {
 		s.executeQuery("select * from (call refreshMatViewRow('TEST.MATVIEW', 0)) p");
 	}
 	
-	@Test public void testMatViewWithImportedVDB() throws Exception {
+	@Test 
+	public void testMatViewWithImportedVDB() throws Exception {
 		ModelMetaData mmd = new ModelMetaData();
 		mmd.setName("phy");
 		mmd.setSchemaSourceType("DDL");

@@ -31,6 +31,8 @@ import org.teiid.core.index.IEntryResult;
 import org.teiid.core.util.Assertion;
 import org.teiid.internal.core.index.EntryResult;
 import org.teiid.internal.core.index.IIndexConstants;
+import org.teiid.logging.LogConstants;
+import org.teiid.logging.LogManager;
 import org.teiid.metadata.*;
 import org.teiid.metadata.BaseColumn.NullType;
 import org.teiid.metadata.Column.SearchType;
@@ -428,23 +430,26 @@ public class RecordFactory {
 	        	KeyRecord index = new KeyRecord(Type.Index);
 	        	index.setUUID(string);
 	        	table.getIndexes().add(index);
-			}
+		}
         }
         tokenIndex+=3; //skip reading uuids for associated records
 
         if(includeMaterializationFlag(indexVersion)) {
             // The next token are the UUIDs for the materialized table ID
-        	Table matTable = new Table();
-        	matTable.setUUID(tokens.get(tokenIndex++));
+            Table matTable = new Table();
+            matTable.setUUID(tokens.get(tokenIndex++));
             table.setMaterializedTable(matTable);
+            if (matTable.getUUID().trim().length() > 0){ 
+            	    LogManager.logWarning(LogConstants.CTX_RUNTIME, "RecordFactory.createTableRecord() DIAGNOSTICS\n table identityHashCode: " + System.identityHashCode(table) + " matTable: " + matTable.getUUID() + " matTable identityHashCode: " + System.identityHashCode(matTable));
+            }
             // The next token are the UUID for the materialized stage table ID
             matTable = new Table();
-        	matTable.setUUID(tokens.get(tokenIndex++));
+            matTable.setUUID(tokens.get(tokenIndex++));
             table.setMaterializedStageTable(matTable);
         }
 
-		// The next tokens are footer values
-		setRecordFooterValues(table, tokens, tokenIndex);       
+	// The next tokens are footer values
+	setRecordFooterValues(table, tokens, tokenIndex);       
 
         return table;
     }

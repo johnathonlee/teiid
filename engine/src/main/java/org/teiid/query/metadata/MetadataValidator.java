@@ -369,8 +369,10 @@ public class MetadataValidator {
 				for (Table t:schema.getTables().values()) {
 					if (t.isVirtual()) {
 						if (t.isMaterialized() && t.getMaterializedTable() != null && t.getMaterializedTable().getParent() == null) {
+						
 							String matTableName = t.getMaterializedTable().getName();
 							int index = matTableName.indexOf(Table.NAME_DELIM_CHAR);
+							
 							if (index == -1) {
 								metadataValidator.log(report, model, QueryPlugin.Util.gs(QueryPlugin.Event.TEIID31088, matTableName, t.getFullName()));
 							}
@@ -384,11 +386,16 @@ public class MetadataValidator {
 									Table matTable = matSchema.getTable(matTableName.substring(index+1));
 									if (matTable == null) {
 										metadataValidator.log(report, model, QueryPlugin.Util.gs(QueryPlugin.Event.TEIID31090, matTableName.substring(index+1), schemaName, t.getFullName()));
-									}
-									else {
+									} else {
 										t.setMaterializedTable(matTable);
 									}
 								}
+							}
+						}
+						
+						if (t.isMaterialized() && t.getMaterializedTable() != null) {
+							if (t.getMaterializedTable().getColumns() == null || (t.getMaterializedTable().getColumns()).isEmpty()){
+								throw new AssertionError("MetadataValidator DIAGNOSTICS\n" + t.getFullName() + " uuid: " + t.getUUID() + " matTable: " + t.getMaterializedTable().getFullName() + "matTable objectIdentity: " + System.identityHashCode(t.getMaterializedTable()) + " has no columns defined");
 							}
 						}
 					}
