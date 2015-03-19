@@ -42,7 +42,6 @@ import org.teiid.core.util.Base64;
 import org.teiid.core.util.LRUCache;
 import org.teiid.dqp.internal.process.DQPWorkContext;
 import org.teiid.dqp.internal.process.DQPWorkContext.Version;
-import org.teiid.dqp.service.GSSResult;
 import org.teiid.dqp.service.SessionService;
 import org.teiid.dqp.service.SessionServiceException;
 import org.teiid.jdbc.BaseDataSource;
@@ -53,6 +52,7 @@ import org.teiid.net.TeiidURL;
 import org.teiid.net.socket.AuthenticationType;
 import org.teiid.runtime.RuntimePlugin;
 import org.teiid.security.Credentials;
+import org.teiid.security.GSSResult;
 import org.teiid.security.SecurityHelper;
 
 
@@ -187,15 +187,15 @@ public class LogonImpl implements ILogon {
 				logonResult.addProperty(ILogon.KRB5TOKEN, result.getServiceToken());
 				logonResult.addProperty(ILogon.KRB5_ESTABLISHED, new Boolean(result.isAuthenticated()));
 				if (result.isAuthenticated()) {
-				    logonResult.addProperty(GSSCredential.class.getName(), result.getDelegationCredentail());
+				    logonResult.addProperty(GSSCredential.class.getName(), result.getDelegationCredential());
 				}
 				return logonResult;
 			}		
 			
 			// GSS API (jdbc) will make the session in one single call			
 			connProps.put(ILogon.KRB5TOKEN, result.getServiceToken());
-			if(result.getDelegationCredentail() != null){
-				connProps.put(GSSCredential.class.getName(), result.getDelegationCredentail());
+			if(result.getDelegationCredential() != null){
+				connProps.put(GSSCredential.class.getName(), result.getDelegationCredential());
 			}
 			LogonResult logonResult =  logon(connProps);
 			return logonResult;
