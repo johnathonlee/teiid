@@ -16,6 +16,7 @@ import org.teiid.query.optimizer.TestAggregatePushdown;
 import org.teiid.query.optimizer.TestOptimizer;
 import org.teiid.query.optimizer.TestOptimizer.ComparisonMode;
 import org.teiid.query.optimizer.capabilities.BasicSourceCapabilities;
+import org.teiid.query.optimizer.capabilities.CapabilitiesFinder;
 import org.teiid.query.optimizer.capabilities.DefaultCapabilitiesFinder;
 import org.teiid.query.optimizer.capabilities.FakeCapabilitiesFinder;
 import org.teiid.query.optimizer.capabilities.SourceCapabilities.Capability;
@@ -287,4 +288,13 @@ public class TestWithClauseProcessing {
 	    
 	    helpProcess(plan, dataManager, expected2);
 	}
+	
+	@Test public void testScalarInlining() throws TeiidComponentException, TeiidProcessingException {
+	    String sql = "WITH t(n) AS ( select 1 ) SELECT n FROM t as t1, pm1.g1"; //$NON-NLS-1$
+
+	    BasicSourceCapabilities bsc = TestOptimizer.getTypicalCapabilities();
+	    CapabilitiesFinder capFinder = new DefaultCapabilitiesFinder(bsc);
+	    TestOptimizer.helpPlan(sql, RealMetadataFactory.example1Cached(), new String[] {"SELECT 1 FROM pm1.g1 AS g_0"}, capFinder, ComparisonMode.EXACT_COMMAND_STRING);
+	}
+
 }
