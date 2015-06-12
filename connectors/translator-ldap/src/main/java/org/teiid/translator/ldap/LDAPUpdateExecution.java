@@ -32,11 +32,13 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 import javax.naming.ldap.LdapContext;
 
+import org.teiid.core.util.StringUtil;
 import org.teiid.language.*;
 import org.teiid.language.Comparison.Operator;
 import org.teiid.logging.LogConstants;
 import org.teiid.logging.LogManager;
 import org.teiid.metadata.AbstractMetadataRecord;
+import org.teiid.metadata.Column;
 import org.teiid.translator.DataNotAvailableException;
 import org.teiid.translator.TranslatorException;
 import org.teiid.translator.UpdateExecution;
@@ -181,7 +183,7 @@ public class LDAPUpdateExecution implements UpdateExecution {
 				Attribute insertAttr = new BasicAttribute(nameInsertElement);
 				Object insertValue = null;
 				if (((Literal)insertValueList.get(i)).getValue() != null) {
-					insertValue = IQueryToLdapSearchParser.getExpressionString(((Literal)insertValueList.get(i)));
+					insertValue = IQueryToLdapSearchParser.getLiteralString(((Literal)insertValueList.get(i)));
 				}
 				insertAttr.add(insertValue);
 				insertAttrs.put(insertAttr);
@@ -206,6 +208,35 @@ public class LDAPUpdateExecution implements UpdateExecution {
             final String msg = LDAPPlugin.Util.getString("LDAPUpdateExecution.insertFailedUnexpected",distinguishedName); //$NON-NLS-1$
 			throw new TranslatorException(e, msg);
 		}
+	}
+
+	static Attribute createBasicAttribute(String id,
+			Expression expr, Column col) {
+		Attribute attr = new BasicAttribute(id);
+		if (expr instanceof org.teiid.language.Array) {
+			List<Expression> exprs = ((org.teiid.language.Array)expr).getExpressions();
+			for (Expression val : exprs) {
+				Literal l = (Literal)val;
+				if (l.getValue() != null) {
+					attr.add(IQueryToLdapSearchParser.getLiteralString(l));
+				}
+			}
+		} else {
+			Literal l = (Literal)expr;
+			Object insertValue = null;
+			if (l.getValue() != null) {
+				if (LDAPQueryExecution.MULTIVALUED_CONCAT.equalsIgnoreCase(col.getDefaultValue())) {
+					List<String> vals = StringUtil.split(l.getValue().toString(), "?"); //$NON-NLS-1$
+					for (String val : vals) {
+						attr.add(val);
+					}
+					return attr;
+				}
+				insertValue = IQueryToLdapSearchParser.getLiteralString(l);
+			}
+			attr.add(insertValue);
+		}
+		return attr;
 	}
 
 	// Private method to actually do a delete operation.  Per JNDI doc at
@@ -311,7 +342,7 @@ public class LDAPUpdateExecution implements UpdateExecution {
 			// attribute?
 			Object valueRightExpr = null;
 			if (((Literal)rightExpr).getValue() != null) {
-				valueRightExpr = IQueryToLdapSearchParser.getExpressionString((Literal)rightExpr);
+				valueRightExpr = IQueryToLdapSearchParser.getLiteralString((Literal)rightExpr);
 			}
 	        updateMods[i] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute(nameLeftElement, valueRightExpr));
 		}

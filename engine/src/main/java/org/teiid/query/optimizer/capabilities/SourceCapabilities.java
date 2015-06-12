@@ -340,7 +340,10 @@ public interface SourceCapabilities {
         QUERY_GROUP_BY_ROLLUP, 
         QUERY_ORDERBY_EXTENDED_GROUPING, 
         INVALID_EXCEPTION, //property saying why the capabilities are invalid
-        COLLATION_LOCALE;
+        COLLATION_LOCALE, 
+        RECURSIVE_COMMON_TABLE_EXPRESSIONS, 
+        CRITERIA_COMPARE_ORDERED_EXCLUSIVE,
+        PARTIAL_FILTERS;
         
         private final String toString;
         
