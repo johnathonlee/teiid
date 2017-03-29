@@ -36,6 +36,7 @@ import org.teiid.api.exception.query.QueryPlannerException;
 import org.teiid.core.TeiidComponentException;
 import org.teiid.query.analysis.AnalysisRecord;
 import org.teiid.query.metadata.QueryMetadataInterface;
+import org.teiid.query.metadata.TempMetadataAdapter;
 import org.teiid.query.optimizer.capabilities.CapabilitiesFinder;
 import org.teiid.query.optimizer.relational.OptimizerRule;
 import org.teiid.query.optimizer.relational.RuleStack;
@@ -265,10 +266,18 @@ public class RuleImplementJoinStrategy implements OptimizerRule {
         boolean sort = true;
         
         if (sourceNode.getType() == NodeConstants.Types.ACCESS) {
-        	if (distinct || NewCalculateCostUtil.usesKey(sourceNode, expressions, metadata)) {
+            boolean usesKey = NewCalculateCostUtil.usesKey(sourceNode, expressions, metadata); 
+        	if (distinct || usesKey) {
                 joinNode.setProperty(joinNode.getFirstChild() == childNode ? NodeConstants.Info.IS_LEFT_DISTINCT : NodeConstants.Info.IS_RIGHT_DISTINCT, true);
         	}
+//<<<<<<< HEAD
+//	        if (attemptPush && RuleRaiseAccess.canRaiseOverSort(sourceNode, metadata, capFinder, sortNode, null, false, true)) {
+//=======
+        	if (!usesKey && RuleRaiseAccess.getModelIDFromAccess(sourceNode, metadata) == TempMetadataAdapter.TEMP_MODEL) {
+        	    attemptPush = false;
+        	}
 	        if (attemptPush && RuleRaiseAccess.canRaiseOverSort(sourceNode, metadata, capFinder, sortNode, null, false, true)) {
+//>>>>>>> 3984541... TEIID-4812 addressing issues related to no rows and larger reads from
 	            sourceNode.getFirstChild().addAsParent(sortNode);
 	            
 	            if (needsCorrection) {

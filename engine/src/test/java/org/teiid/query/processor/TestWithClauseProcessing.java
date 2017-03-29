@@ -63,8 +63,15 @@ public class TestWithClauseProcessing {
 	    dataManager.setBlockOnce();
 	    sampleData1(dataManager);
 	    
-	    ProcessorPlan plan = TestOptimizer.helpPlan(sql, RealMetadataFactory.example1Cached(), null, new DefaultCapabilitiesFinder(TestOptimizer.getTypicalCapabilities()), 
-	    		new String[] {"SELECT a.x, a.z FROM a WHERE a.z = TRUE ORDER BY a.x", "SELECT g_0.e1 AS c_0, g_0.e2 AS c_1 FROM pm1.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>) ORDER BY c_0"}, ComparisonMode.EXACT_COMMAND_STRING);
+//<<<<<<< HEAD
+//	    ProcessorPlan plan = TestOptimizer.helpPlan(sql, RealMetadataFactory.example1Cached(), null, new DefaultCapabilitiesFinder(TestOptimizer.getTypicalCapabilities()), 
+//	    		new String[] {"SELECT a.x, a.z FROM a WHERE a.z = TRUE ORDER BY a.x", "SELECT g_0.e1 AS c_0, g_0.e2 AS c_1 FROM pm1.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>) ORDER BY c_0"}, ComparisonMode.EXACT_COMMAND_STRING);
+//=======
+	    BasicSourceCapabilities typicalCapabilities = TestOptimizer.getTypicalCapabilities();
+	    typicalCapabilities.setCapabilitySupport(Capability.QUERY_ORDERBY, false);
+		ProcessorPlan plan = TestOptimizer.helpPlan(sql, RealMetadataFactory.example1Cached(), null, new DefaultCapabilitiesFinder(typicalCapabilities), 
+	    		new String[] {"SELECT a.x, a.z FROM a WHERE a.z = TRUE", "SELECT g_0.e1, g_0.e2 FROM pm1.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>)"}, ComparisonMode.EXACT_COMMAND_STRING);
+//>>>>>>> 3984541... TEIID-4812 addressing issues related to no rows and larger reads from
 	    
 	    helpProcess(plan, dataManager, expected);
 	}
@@ -277,14 +284,14 @@ public class TestWithClauseProcessing {
 		RealMetadataFactory.setCardinality("pm1.g2", 100000, metadata);
 	    String sql = "with a (x) as (select e1 from pm1.g1) SELECT a.x from pm1.g2, a where (pm1.g2.e1 = a.x)"; //$NON-NLS-1$
 	    
-	    TestOptimizer.helpPlan(sql, metadata, null, TestOptimizer.getGenericFinder(false), new String[] {"SELECT g_0.e1 FROM pm1.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>)", "SELECT a.x FROM a ORDER BY a.x"}, ComparisonMode.EXACT_COMMAND_STRING);
+	    TestOptimizer.helpPlan(sql, metadata, null, TestOptimizer.getGenericFinder(false), new String[] {"SELECT g_0.e1 FROM pm1.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>)", "SELECT a.x FROM a"}, ComparisonMode.EXACT_COMMAND_STRING);
 	}
 	
 	@Test public void testWithJoinPlanning1() throws TeiidException {
 		TransformationMetadata metadata = RealMetadataFactory.example1Cached();
 	    String sql = "with a (x) as (select e1 from pm1.g1) SELECT a.x from pm1.g2, a where (pm1.g2.e1 = a.x)"; //$NON-NLS-1$
 	    
-	    TestOptimizer.helpPlan(sql, metadata, null, TestOptimizer.getGenericFinder(false), new String[] {"SELECT g_0.e1 FROM pm1.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>)", "SELECT a.x FROM a ORDER BY a.x"}, ComparisonMode.EXACT_COMMAND_STRING);
+	    TestOptimizer.helpPlan(sql, metadata, null, TestOptimizer.getGenericFinder(false), new String[] {"SELECT g_0.e1 FROM pm1.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>)", "SELECT a.x FROM a"}, ComparisonMode.EXACT_COMMAND_STRING);
 	}
 	
 	@Test public void testWithBlockingJoin() throws TeiidException {

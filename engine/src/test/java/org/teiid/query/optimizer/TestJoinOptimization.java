@@ -23,6 +23,7 @@
 package org.teiid.query.optimizer;
 
 import static org.junit.Assert.*;
+import static org.teiid.query.processor.TestProcessor.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ import org.teiid.query.optimizer.capabilities.FakeCapabilitiesFinder;
 import org.teiid.query.optimizer.capabilities.SourceCapabilities.Capability;
 import org.teiid.query.optimizer.relational.rules.JoinUtil;
 import org.teiid.query.parser.QueryParser;
+import org.teiid.query.processor.FakeDataManager;
 import org.teiid.query.processor.HardcodedDataManager;
 import org.teiid.query.processor.ProcessorPlan;
 import org.teiid.query.processor.TestProcessor;
@@ -1380,6 +1382,19 @@ public class TestJoinOptimization {
         
         TestProcessor.helpProcess(plan, hdm, new List<?>[] { Arrays.asList(1, "2", 1)});
     }
+	
+	@Test(expected=TeiidComponentException.class) public void testDetectInvalidSort() throws Exception {
+		String sql = "select * from (with a (x, y, z) as /*+ no_inline */ (select e1, e2, e3 from pm1.g1) SELECT pm1.g2.e2, a.x, z from pm1.g2, a where e1 = x order by x) as x where z = 1"; //$NON-NLS-1$
+	    
+	    FakeDataManager dataManager = new FakeDataManager();
+	    sampleData1(dataManager);
+	    
+	    //we're allowing the sort to be pushed, but it's not honored by FakeDataManager
+	    ProcessorPlan plan = TestOptimizer.helpPlan(sql, RealMetadataFactory.example1Cached(), null, new DefaultCapabilitiesFinder(TestOptimizer.getTypicalCapabilities()), 
+	    		new String[] {"SELECT a.x, a.z FROM a WHERE a.z = TRUE", "SELECT g_0.e1 AS c_0, g_0.e2 AS c_1 FROM pm1.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>) ORDER BY c_0"}, ComparisonMode.EXACT_COMMAND_STRING);
+	    
+	    helpProcess(plan, createCommandContext(), dataManager, null);
+	}
 	
 	@Test public void testCrossSourceOuterWithOffset() throws Exception {
         String sql = "SELECT pm1.g1.e1, pm2.g1.e2 from pm1.g1 left outer join pm2.g1 on pm1.g1.e1 = pm2.g1.e1 ORDER BY pm1.g1.e1 OFFSET 1 ROWS";
