@@ -1533,34 +1533,7 @@ public class TestDependentJoins {
         ProcessorPlan plan = TestProcessor.helpGetPlan(sql, RealMetadataFactory.example1Cached(), dcf);
 
         TestProcessor.helpProcess(plan, dataManager, expected);
-    }
-        
-    @Test public void testPushSelectWithPartiallyPushedSetOp() throws Exception {
-        BasicSourceCapabilities caps = TestOptimizer.getTypicalCapabilities();
-        caps.setCapabilitySupport(Capability.QUERY_UNION, true);
-        caps.setCapabilitySupport(Capability.QUERY_FROM_INLINE_VIEWS, true);
-        caps.setFunctionSupport("+", true);
-        ProcessorPlan plan = TestOptimizer.helpPlan("select * from (select * from pm2.g2 union (select e1, e2+1, e3, e4 from pm1.g1 union all select * from pm1.g2)) x, pm1.g3 where x.e1 = pm1.g3.e1  option makedep x", //$NON-NLS-1$
-                RealMetadataFactory.example1Cached(),
-                new String[] {
-                    "SELECT v_0.c_0, v_0.c_1, v_0.c_2, v_0.c_3 FROM (SELECT g_1.e1 AS c_0, (g_1.e2 + 1) AS c_1, g_1.e3 AS c_2, g_1.e4 AS c_3 FROM pm1.g1 AS g_1 UNION ALL SELECT g_0.e1 AS c_0, g_0.e2 AS c_1, g_0.e3 AS c_2, g_0.e4 AS c_3 FROM pm1.g2 AS g_0) AS v_0 WHERE v_0.c_0 IN (<dependent values>)", 
-                    "SELECT g_0.e1, g_0.e2, g_0.e3, g_0.e4 FROM pm2.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>)", "SELECT g_0.e1 AS c_0, g_0.e2 AS c_1, g_0.e3 AS c_2, g_0.e4 AS c_3 FROM pm1.g3 AS g_0 ORDER BY c_0"}, new DefaultCapabilitiesFinder(caps), ComparisonMode.EXACT_COMMAND_STRING); //$NON-NLS-1$
-        
-        HardcodedDataManager dataManager = new HardcodedDataManager();
-        dataManager.addData("SELECT g_0.e1 AS c_0, g_0.e2 AS c_1, g_0.e3 AS c_2, g_0.e4 AS c_3 FROM pm1.g3 AS g_0 ORDER BY c_0", Arrays.asList("a", 1, true, 2.0));
-        dataManager.addData("SELECT g_0.e1, g_0.e2, g_0.e3, g_0.e4 FROM pm2.g2 AS g_0 WHERE g_0.e1 = 'a'", Arrays.asList("a", 1, false, 2.0));
-        dataManager.addData("SELECT v_0.c_0, v_0.c_1, v_0.c_2, v_0.c_3 FROM (SELECT g_1.e1 AS c_0, (g_1.e2 + 1) AS c_1, g_1.e3 AS c_2, g_1.e4 AS c_3 FROM pm1.g1 AS g_1 UNION ALL SELECT g_0.e1 AS c_0, g_0.e2 AS c_1, g_0.e3 AS c_2, g_0.e4 AS c_3 FROM pm1.g2 AS g_0) AS v_0 WHERE v_0.c_0 = 'a'", Arrays.asList("a", 2, true, 2.0));
-        
-        List[] expected = new List[] { 
-            Arrays.asList("a", 1, false, 2.0, "a", 1, true, 2.0),
-            Arrays.asList("a", 2, true, 2.0, "a", 1, true, 2.0),
-        };    
-        
-        CommandContext cc = createCommandContext();
-        cc.setMetadata(RealMetadataFactory.example1Cached());
-        
-        TestProcessor.helpProcess(plan, cc, dataManager, expected);
-    }
+    }       
     
     @Test public void testDupliciatePredicate() { 
         // Create query 
@@ -1592,6 +1565,75 @@ public class TestDependentJoins {
         
         TestProcessor.helpProcess(plan, dataManager, expected);
 
+    }
+    
+    @Test public void testPushSelectWithPartiallyPushedSetOp() throws Exception {
+        BasicSourceCapabilities caps = TestOptimizer.getTypicalCapabilities();
+        caps.setCapabilitySupport(Capability.QUERY_UNION, true);
+        caps.setCapabilitySupport(Capability.QUERY_FROM_INLINE_VIEWS, true);
+        caps.setFunctionSupport("+", true);
+        ProcessorPlan plan = TestOptimizer.helpPlan("select * from (select * from pm2.g2 union (select e1, e2+1, e3, e4 from pm1.g1 union all select * from pm1.g2)) x, pm1.g3 where x.e1 = pm1.g3.e1  option makedep x", //$NON-NLS-1$
+                RealMetadataFactory.example1Cached(),
+                new String[] {
+                    "SELECT v_0.c_0, v_0.c_1, v_0.c_2, v_0.c_3 FROM (SELECT g_1.e1 AS c_0, (g_1.e2 + 1) AS c_1, g_1.e3 AS c_2, g_1.e4 AS c_3 FROM pm1.g1 AS g_1 UNION ALL SELECT g_0.e1 AS c_0, g_0.e2 AS c_1, g_0.e3 AS c_2, g_0.e4 AS c_3 FROM pm1.g2 AS g_0) AS v_0 WHERE v_0.c_0 IN (<dependent values>)", 
+                    "SELECT g_0.e1, g_0.e2, g_0.e3, g_0.e4 FROM pm2.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>)", "SELECT g_0.e1 AS c_0, g_0.e2 AS c_1, g_0.e3 AS c_2, g_0.e4 AS c_3 FROM pm1.g3 AS g_0 ORDER BY c_0"}, new DefaultCapabilitiesFinder(caps), ComparisonMode.EXACT_COMMAND_STRING); //$NON-NLS-1$
+        
+        HardcodedDataManager dataManager = new HardcodedDataManager();
+        dataManager.addData("SELECT g_0.e1 AS c_0, g_0.e2 AS c_1, g_0.e3 AS c_2, g_0.e4 AS c_3 FROM pm1.g3 AS g_0 ORDER BY c_0", Arrays.asList("a", 1, true, 2.0));
+        dataManager.addData("SELECT g_0.e1, g_0.e2, g_0.e3, g_0.e4 FROM pm2.g2 AS g_0 WHERE g_0.e1 = 'a'", Arrays.asList("a", 1, false, 2.0));
+        dataManager.addData("SELECT v_0.c_0, v_0.c_1, v_0.c_2, v_0.c_3 FROM (SELECT g_1.e1 AS c_0, (g_1.e2 + 1) AS c_1, g_1.e3 AS c_2, g_1.e4 AS c_3 FROM pm1.g1 AS g_1 UNION ALL SELECT g_0.e1 AS c_0, g_0.e2 AS c_1, g_0.e3 AS c_2, g_0.e4 AS c_3 FROM pm1.g2 AS g_0) AS v_0 WHERE v_0.c_0 = 'a'", Arrays.asList("a", 2, true, 2.0));
+        
+        List[] expected = new List[] { 
+            Arrays.asList("a", 1, false, 2.0, "a", 1, true, 2.0),
+            Arrays.asList("a", 2, true, 2.0, "a", 1, true, 2.0),
+        };    
+        
+        CommandContext cc = createCommandContext();
+        cc.setMetadata(RealMetadataFactory.example1Cached());
+        
+        TestProcessor.helpProcess(plan, cc, dataManager, expected);
+    }
+    
+    @Test public void testPushSelectWithPartiallyPushedSetOpProjectingLiteral() throws Exception {
+        BasicSourceCapabilities caps = TestOptimizer.getTypicalCapabilities();
+        caps.setCapabilitySupport(Capability.QUERY_UNION, true);
+        caps.setCapabilitySupport(Capability.QUERY_FROM_INLINE_VIEWS, true);
+        caps.setFunctionSupport("+", true);
+        ProcessorPlan plan = TestOptimizer.helpPlan("select * from (select * from pm2.g2 union (select null as e1, e2+1, e3, e4 from pm1.g1 union all select * from pm1.g2)) x, pm1.g3 where x.e1 = pm1.g3.e1  option makedep x", //$NON-NLS-1$
+                RealMetadataFactory.example1Cached(),
+                new String[] {
+                    "SELECT g_0.e1, g_0.e2, g_0.e3, g_0.e4 FROM pm2.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>)", 
+                    "SELECT g_0.e1 AS c_0, g_0.e2 AS c_1, g_0.e3 AS c_2, g_0.e4 AS c_3 FROM pm1.g3 AS g_0 ORDER BY c_0", 
+                    "SELECT g_0.e1, g_0.e2, g_0.e3, g_0.e4 FROM pm1.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>)"}, new DefaultCapabilitiesFinder(caps), ComparisonMode.EXACT_COMMAND_STRING); //$NON-NLS-1$
+        
+        HardcodedDataManager dataManager = new HardcodedDataManager();
+        dataManager.addData("SELECT g_0.e1 AS c_0, g_0.e2 AS c_1, g_0.e3 AS c_2, g_0.e4 AS c_3 FROM pm1.g3 AS g_0 ORDER BY c_0", Arrays.asList("a", 1, true, 2.0));
+        dataManager.addData("SELECT g_0.e1, g_0.e2, g_0.e3, g_0.e4 FROM pm2.g2 AS g_0 WHERE g_0.e1 = 'a'", Arrays.asList("a", 1, false, 2.0));
+        dataManager.addData("SELECT g_0.e1, g_0.e2, g_0.e3, g_0.e4 FROM pm1.g2 AS g_0 WHERE g_0.e1 = 'a'", Arrays.asList("a", 2, true, 2.0));
+        
+        List[] expected = new List[] { 
+            Arrays.asList("a", 1, false, 2.0, "a", 1, true, 2.0),
+            Arrays.asList("a", 2, true, 2.0, "a", 1, true, 2.0),
+        };    
+        
+        CommandContext cc = createCommandContext();
+        cc.setMetadata(RealMetadataFactory.example1Cached());
+        
+        TestProcessor.helpProcess(plan, cc, dataManager, expected);
+    }
+    
+    @Test public void testNonVirtualDependentOverUnion() throws Exception {
+        BasicSourceCapabilities caps = TestOptimizer.getTypicalCapabilities();
+        TransformationMetadata metadata = RealMetadataFactory.example1();
+        RealMetadataFactory.setCardinality("pm1.g1", 10000, metadata);
+        RealMetadataFactory.setCardinality("pm1.g2", 100000, metadata);
+        RealMetadataFactory.setCardinality("pm1.g3", 100000, metadata);
+        TestOptimizer.helpPlan("select pm1.g1.e1 from pm1.g1 inner join (select pm1.g2.e1 from pm1.g2 union all select pm1.g3.e1 from pm1.g3) v on pm1.g1.e1 = v.e1", //$NON-NLS-1$
+                metadata,
+                new String[] {
+                    "SELECT g_0.e1 FROM pm1.g2 AS g_0 WHERE g_0.e1 IN (<dependent values>)", 
+                    "SELECT g_0.e1 FROM pm1.g3 AS g_0 WHERE g_0.e1 IN (<dependent values>)", 
+                    "SELECT g_0.e1 AS c_0 FROM pm1.g1 AS g_0 ORDER BY c_0"}, new DefaultCapabilitiesFinder(caps), ComparisonMode.EXACT_COMMAND_STRING); //$NON-NLS-1$
     }
     
 }
