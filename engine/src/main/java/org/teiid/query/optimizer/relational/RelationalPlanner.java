@@ -205,7 +205,15 @@ public class RelationalPlanner {
 			 throw new QueryPlannerException(e);
 		}
 		
-		planWith(plan, command);
+        if (!this.withPlanningState.withList.isEmpty()) {
+            // set correlated references before planning with, but
+            // don't fully plan the subqueries as that needs to happen after
+            // with planning
+            connectSubqueryContainers(plan, true);
+            planWith(plan, command);
+        }
+        // Connect ProcessorPlan to SubqueryContainer (if any) of SELECT, PROJECT, and other nodes
+        connectSubqueryContainers(plan, false); //TODO: merge with node creation
 		
 		if (plan.getType() == NodeConstants.Types.SOURCE) {
 			//this was effectively a rewrite
@@ -215,9 +223,6 @@ public class RelationalPlanner {
 		if(debug) {
             analysisRecord.println("\nCANONICAL PLAN: \n" + plan); //$NON-NLS-1$
 		} 
-
-        // Connect ProcessorPlan to SubqueryContainer (if any) of SELECT or PROJECT nodes
-		connectSubqueryContainers(plan, this.withPlanningState.pushdownWith); //TODO: merge with node creation
 		
         // Set top column information on top node
         List<Expression> topCols = Util.deepClone(command.getProjectedSymbols(), Expression.class);
@@ -260,9 +265,6 @@ public class RelationalPlanner {
 	private void planWith(PlanNode plan, Command command) throws QueryPlannerException,
 			QueryMetadataException, TeiidComponentException,
 			QueryResolverException {
-		if (this.withPlanningState.withList.isEmpty()) {
-			return;
-		}
 		//TODO: merge this logic inline with the main rule execution.
 		RuleStack stack = new RuleStack();
 		stack.push(new RuleAssignOutputElements(false));
@@ -645,18 +647,18 @@ public class RelationalPlanner {
     	this.context = context;
 	}
 
-    private void connectSubqueryContainers(PlanNode plan, LinkedHashMap<String, WithQueryCommand> pushdownWith) throws QueryPlannerException, QueryMetadataException, TeiidComponentException {
+    private void connectSubqueryContainers(PlanNode plan, boolean skipPlanning) throws QueryPlannerException, QueryMetadataException, TeiidComponentException {
         for (PlanNode node : NodeEditor.findAllNodes(plan, NodeConstants.Types.PROJECT | NodeConstants.Types.SELECT | NodeConstants.Types.JOIN | NodeConstants.Types.SOURCE | NodeConstants.Types.GROUP | NodeConstants.Types.SORT)) {
             Set<GroupSymbol> groupSymbols = getGroupSymbols(node);
             List<SubqueryContainer<?>> subqueryContainers = node.getSubqueryContainers();
-            planSubqueries(pushdownWith, groupSymbols, node, subqueryContainers, false);
+            planSubqueries(groupSymbols, node, subqueryContainers, false, skipPlanning);
             node.addGroups(GroupsUsedByElementsVisitor.getGroups(node.getCorrelatedReferenceElements()));
         }
     }
 
 	public void planSubqueries(
-			LinkedHashMap<String, WithQueryCommand> pushdownWith, Set<GroupSymbol> groupSymbols,
-			PlanNode node, List<SubqueryContainer<?>> subqueryContainers, boolean isStackEntry)
+			Set<GroupSymbol> groupSymbols,
+			PlanNode node, List<SubqueryContainer<?>> subqueryContainers, boolean isStackEntry, boolean skipPlanning)
 			throws QueryMetadataException, TeiidComponentException,
 			QueryPlannerException {
         if (subqueryContainers.isEmpty()){
@@ -675,12 +677,11 @@ public class RelationalPlanner {
 				continue;
 			}
 		    //a clone is needed here because the command could get modified during planning
-		    Command subCommand = (Command)container.getCommand().clone(); 
-		    List<SubqueryContainer<?>> containers = ValueIteratorProviderCollectorVisitor.getValueIteratorProviders(container.getCommand());
-		    List<SubqueryContainer<?>> cloneContainers = null;
-		    if (!containers.isEmpty()) {
-		    	cloneContainers = ValueIteratorProviderCollectorVisitor.getValueIteratorProviders(subCommand);
+		    Command subCommand = container.getCommand();
+		    if (!skipPlanning) {
+		        subCommand = (Command)container.getCommand().clone(); 
 		    }
+		    
 			Set<PlanningStackEntry> entries = null;
 			PlanningStackEntry stackEntry = null;
 			if (isStackEntry) {
@@ -690,30 +691,32 @@ public class RelationalPlanner {
 			try {
 			    ArrayList<Reference> correlatedReferences = new ArrayList<Reference>();
 			    CorrelatedReferenceCollectorVisitor.collectReferences(subCommand, localGroupSymbols, correlatedReferences, metadata);
-			    ProcessorPlan procPlan = QueryOptimizer.optimizePlan(subCommand, metadata, idGenerator, capFinder, analysisRecord, context);
-			    if (procPlan instanceof RelationalPlan && pushdownWith != null && !pushdownWith.isEmpty()) {
-			    	LinkedHashMap<String, WithQueryCommand> parentPushdownWith = pushdownWith;
-			    	if (subCommand instanceof QueryCommand) {
-			    		QueryCommand query = (QueryCommand)subCommand;
-			    		List<WithQueryCommand> with = query.getWith();
-			    		if (with != null && !with.isEmpty()) {
-			    			parentPushdownWith = new LinkedHashMap<String, WithQueryCommand>(parentPushdownWith);
-			    			for (WithQueryCommand withQueryCommand : with) {
-			    				parentPushdownWith.remove(withQueryCommand.getGroupSymbol().getNonCorrelationName());
-							}
-			    		}
-			    	}
-			    	assignWithClause(((RelationalPlan) procPlan).getRootNode(), parentPushdownWith, true);
+                setCorrelatedReferences(container, correlatedReferences);
+
+                List<SubqueryContainer<?>> containers = ValueIteratorProviderCollectorVisitor.getValueIteratorProviders(container.getCommand());
+                List<SubqueryContainer<?>> cloneContainers = null;
+                
+			    if (!skipPlanning) {
+			        if (!containers.isEmpty()) {
+		                cloneContainers = ValueIteratorProviderCollectorVisitor.getValueIteratorProviders(subCommand);
+		            }
+    			    ProcessorPlan procPlan = QueryOptimizer.optimizePlan(subCommand, metadata, idGenerator, capFinder, analysisRecord, context);
+    			    container.getCommand().setProcessorPlan(procPlan);
 			    }
-			    container.getCommand().setProcessorPlan(procPlan);
-			    setCorrelatedReferences(container, correlatedReferences);
+
 			    //ensure plans are set on the original nested subqueries
 			    if (!containers.isEmpty()) {
 			    	for (int i = 0; i < containers.size(); i++) {
 			    		Command c = containers.get(i).getCommand();
-			    		Command clone = cloneContainers.get(i).getCommand();
-			    		c.setCorrelatedReferences(clone.getCorrelatedReferences());
-			    		c.setProcessorPlan(clone.getProcessorPlan());
+			    		List<Reference> refs = new ArrayList<Reference>();
+			    		//re-detect the correlated references
+			    		CorrelatedReferenceCollectorVisitor.collectReferences(c, localGroupSymbols, refs, metadata);
+			    		setCorrelatedReferences(containers.get(i), refs);
+			    		
+			    		if (cloneContainers != null) {
+    			    		Command clone = cloneContainers.get(i).getCommand();
+                            c.setProcessorPlan(clone.getProcessorPlan());
+			    		}
 			    	}
 			    }
 			    

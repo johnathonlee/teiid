@@ -1700,5 +1700,4 @@ public class TestEmbeddedServer {
 		//see the correct pushdown in hcef.addData above
 		s.execute("with a (x) as (select e1 from pm1.g1) SELECT a.x from a, a z"); //$NON-NLS-1$
 	}
-
 }
