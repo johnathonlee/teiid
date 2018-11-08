@@ -211,7 +211,10 @@ public class RelationalPlanner {
             // don't fully plan the subqueries as that needs to happen after
             // with planning
             connectSubqueryContainers(plan, true);
-            planWith(plan, command);
+            //reverting to "command" in backport of TEIID-5532 vs comment below:
+            //use the original to plan with as the command object may have been modified
+            //in particular the replacement of aggregate expressions
+            planWith(plan, command);  //command replaced original
         }
         // Connect ProcessorPlan to SubqueryContainer (if any) of SELECT, PROJECT, and other nodes
         connectSubqueryContainers(plan, false); //TODO: merge with node creation
